@@ -63,7 +63,7 @@ input:focus{border-color:#2D6A4F;box-shadow:0 0 0 3px rgba(45,106,79,0.1)}
         <div class="err-msg">Please enter your email.</div>
       </div>
       <div class="fg" id="fg-login-pw">
-        <label>Password</label>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px"><label style="margin:0">Password</label><button type="button" onclick="togglePw('login-pw',this)" style="background:none;border:none;font-size:12px;color:#9E9891;cursor:pointer;font-family:DM Sans,sans-serif;padding:0">Show</button></div>
         <input type="password" id="login-pw" placeholder="Your password" onkeydown="if(event.key==='Enter')doLogin()">
         <div class="err-msg">Please enter your password.</div>
       </div>
@@ -81,12 +81,14 @@ input:focus{border-color:#2D6A4F;box-shadow:0 0 0 3px rgba(45,106,79,0.1)}
       </div>
       <div class="fg" id="fg-su-email">
         <label>Email address</label>
-        <input type="email" id="su-email" placeholder="you@company.com" onkeydown="if(event.key==='Enter')doSignup()">
-        <div class="err-msg">Please enter a valid email.</div>
+        <input type="email" id="su-email" placeholder="e.g. name@gmail.com" onkeydown="if(event.key==='Enter')doSignup()">
+        <div class="err-msg">Please enter a valid email address (e.g. name@gmail.com).</div>
       </div>
       <div class="fg" id="fg-su-pw">
         <label>Password</label>
-        <input type="password" id="su-pw" placeholder="At least 6 characters" onkeydown="if(event.key==='Enter')doSignup()">
+        <input type="password" id="su-pw" placeholder="At least 6 characters" onkeydown="if(event.key==='Enter')doSignup()" oninput="checkPwStrength(this.value)">
+        <div style="height:4px;background:#E2DDD6;border-radius:2px;margin-top:8px;overflow:hidden"><div id="pw-strength-bar" style="height:100%;width:0;border-radius:2px;transition:all 0.3s"></div></div>
+        <div style="display:flex;justify-content:space-between;margin-top:4px"><span style="font-size:11px;color:#9E9891">Password strength</span><span id="pw-strength-label" style="font-size:11px;font-weight:500"></span></div>
         <div class="err-msg">Password must be at least 6 characters.</div>
       </div>
       <button class="btn-submit" id="signup-btn" onclick="doSignup()">Create account</button>
@@ -111,6 +113,37 @@ var db   = firebase.database();
 if(typeof FIREBASE_CONFIG === 'undefined' || FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') {
   document.getElementById('error-banner').textContent = '⚠️ config.js not set up yet. Open config.js and fill in your Firebase API key and project details.';
   document.getElementById('error-banner').style.display = 'block';
+}
+
+/* Email validator */
+function togglePw(inputId, btn) {
+  var inp = document.getElementById(inputId);
+  if(inp.type === 'password') { inp.type = 'text'; btn.textContent = 'Hide'; }
+  else { inp.type = 'password'; btn.textContent = 'Show'; }
+}
+
+function isValidEmail(email) {
+  var re = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  return re.test(email.toLowerCase());
+}
+
+/* Real-time password strength indicator */
+function checkPwStrength(pw) {
+  var bar = document.getElementById('pw-strength-bar');
+  var label = document.getElementById('pw-strength-label');
+  if(!bar) return;
+  var score = 0;
+  if(pw.length >= 6) score++;
+  if(pw.length >= 10) score++;
+  if(/[A-Z]/.test(pw)) score++;
+  if(/[0-9]/.test(pw)) score++;
+  if(/[^A-Za-z0-9]/.test(pw)) score++;
+  var colors = ['#E2DDD6','#C0392B','#E67E22','#F1C40F','#27AE60','#2D6A4F'];
+  var labels = ['','Weak','Fair','Good','Strong','Very strong'];
+  bar.style.width = (score * 20) + '%';
+  bar.style.background = colors[score];
+  label.textContent = labels[score];
+  label.style.color = colors[score];
 }
 
 /* Set mode from URL param */
@@ -150,13 +183,15 @@ async function doLogin(){
   } catch(e){
     btn.disabled=false;btn.innerHTML='Sign in';
     var msg;
-    if(e.code==='auth/user-not-found'||e.code==='auth/wrong-password'||e.code==='auth/invalid-credential')msg='Incorrect email or password.';
-    else if(e.code==='auth/too-many-requests')msg='Too many attempts. Please wait a few minutes and try again.';
-    else if(e.code==='auth/invalid-email')msg='Please enter a valid email address.';
-    else if(e.code==='auth/operation-not-allowed')msg='⚠️ Email sign-in is not enabled. Go to Firebase Console → Authentication → Sign-in method → Email/Password → Enable it.';
-    else if(e.code==='auth/invalid-api-key'||e.code==='auth/configuration-not-found')msg='⚠️ Firebase API key not set. Open config.js and fill in your Firebase details.';
-    else if(e.code==='auth/network-request-failed')msg='Network error. Check your connection and try again.';
-    else msg='Error ('+e.code+'): '+e.message;
+    if(e.code==='auth/user-not-found')msg='❌ No account found with this email. Please sign up first.';
+    else if(e.code==='auth/wrong-password')msg='❌ Wrong password. Please try again.';
+    else if(e.code==='auth/invalid-credential'||e.code==='auth/invalid-login-credentials')msg='❌ Incorrect email or password. Double-check and try again.';
+    else if(e.code==='auth/too-many-requests')msg='⏳ Too many failed attempts. Please wait a few minutes before trying again.';
+    else if(e.code==='auth/invalid-email')msg='❌ Please enter a valid email address.';
+    else if(e.code==='auth/user-disabled')msg='❌ This account has been disabled. Please contact your manager.';
+    else if(e.code==='auth/operation-not-allowed')msg='⚠️ Email sign-in is not enabled in Firebase Console. Contact your administrator.';
+    else if(e.code==='auth/network-request-failed')msg='🌐 Network error. Check your internet connection and try again.';
+    else msg='Something went wrong ('+e.code+'). Please try again.';
     showErr(msg);
   }
 }
@@ -167,9 +202,10 @@ async function doSignup(){
   var name=document.getElementById('su-name').value.trim();
   var email=document.getElementById('su-email').value.trim();
   var pw=document.getElementById('su-pw').value;
-  if(!name){setErr('fg-su-name','Please enter your full name.');return;}
-  if(!email||email.indexOf('@')<0){setErr('fg-su-email','Please enter a valid email.');return;}
+  if(!name||name.trim().split(' ').length<2){setErr('fg-su-name','Please enter your full name (first and last).');return;}
+  if(!email||!isValidEmail(email)){setErr('fg-su-email','Please enter a valid email address (e.g. name@gmail.com).');return;}
   if(pw.length<6){setErr('fg-su-pw','Password must be at least 6 characters.');return;}
+  if(pw.length>20){setErr('fg-su-pw','Password must be 20 characters or fewer.');return;}
   var btn=document.getElementById('signup-btn');
   btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Creating account...';
   try{
@@ -180,13 +216,12 @@ async function doSignup(){
   } catch(e){
     btn.disabled=false;btn.innerHTML='Create account';
     var msg;
-    if(e.code==='auth/email-already-in-use')msg='This email is already registered. Try signing in instead.';
-    else if(e.code==='auth/invalid-email')msg='Please enter a valid email address.';
-    else if(e.code==='auth/weak-password')msg='Password is too weak. Use at least 6 characters.';
-    else if(e.code==='auth/operation-not-allowed')msg='⚠️ Email sign-in is not enabled in Firebase. Go to Firebase Console → Authentication → Sign-in method → Email/Password → Enable it.';
-    else if(e.code==='auth/invalid-api-key'||e.code==='auth/configuration-not-found')msg='⚠️ Firebase API key not set. Open config.js and fill in your Firebase details.';
-    else if(e.code==='auth/network-request-failed')msg='Network error. Check your connection and try again.';
-    else msg='Error ('+e.code+'): '+e.message;
+    if(e.code==='auth/email-already-in-use')msg='📧 This email already has an account. Click "Sign in" to log in instead.';
+    else if(e.code==='auth/invalid-email')msg='❌ Please enter a valid email address.';
+    else if(e.code==='auth/weak-password')msg='🔒 Password is too weak. Use at least 6 characters with a mix of letters and numbers.';
+    else if(e.code==='auth/operation-not-allowed')msg='⚠️ Email sign-in is not enabled in Firebase Console. Contact your administrator.';
+    else if(e.code==='auth/network-request-failed')msg='🌐 Network error. Check your internet connection and try again.';
+    else msg='Something went wrong ('+e.code+'). Please try again.';
     showErr(msg);
   }
 }
