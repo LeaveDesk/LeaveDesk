@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LeaveDesk — Sign in</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:#F5F2ED;color:#1A1714;font-size:15px;min-height:100vh;display:flex;flex-direction:column}
+nav{background:#fff;border-bottom:1px solid #E2DDD6;padding:0 32px;height:54px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.logo{font-family:'DM Serif Display',serif;font-size:19px;letter-spacing:-0.3px;cursor:pointer}
+.logo b{color:#2D6A4F;font-weight:400}
+.back-link{font-size:13px;color:#6B6560;cursor:pointer;display:flex;align-items:center;gap:5px;transition:color 0.15s}
+.back-link:hover{color:#1A1714}
+.page-body{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px}
+.auth-card{background:#fff;border:1px solid #E2DDD6;border-radius:16px;padding:36px;width:100%;max-width:400px;box-shadow:0 2px 12px rgba(0,0,0,0.06)}
+.auth-toggle{display:flex;background:#F0EDE8;border-radius:40px;padding:3px;margin-bottom:28px}
+.auth-toggle-btn{flex:1;padding:8px;border:none;background:transparent;border-radius:40px;font-family:'DM Sans',sans-serif;font-size:13.5px;font-weight:500;cursor:pointer;color:#6B6560;transition:all 0.15s}
+.auth-toggle-btn.active{background:#fff;color:#1A1714;box-shadow:0 1px 4px rgba(0,0,0,0.1)}
+.auth-title{font-family:'DM Serif Display',serif;font-size:22px;font-weight:400;margin-bottom:6px}
+.auth-sub{font-size:13.5px;color:#6B6560;margin-bottom:24px;line-height:1.5}
+.fg{margin-bottom:15px}
+label{display:block;font-size:12.5px;font-weight:500;color:#6B6560;margin-bottom:5px}
+input{width:100%;padding:10px 12px;border:1px solid #E2DDD6;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;color:#1A1714;background:#fff;outline:none;transition:border 0.15s,box-shadow 0.15s}
+input:focus{border-color:#2D6A4F;box-shadow:0 0 0 3px rgba(45,106,79,0.1)}
+.err-msg{font-size:12px;color:#C0392B;margin-top:4px;display:none}
+.field-err input{border-color:#C0392B}
+.field-err .err-msg{display:block}
+.btn-submit{width:100%;padding:12px;background:#2D6A4F;color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:background 0.15s,opacity 0.15s;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:7px}
+.btn-submit:hover{background:#236040}
+.btn-submit:disabled{opacity:0.55;cursor:not-allowed}
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error-banner{background:#FDECEA;border:1px solid #F5B7B1;border-radius:10px;padding:11px 14px;font-size:13.5px;color:#7B241C;margin-bottom:16px;display:none;line-height:1.5}
+.manager-link{text-align:center;margin-top:20px;padding-top:16px;border-top:1px solid #E2DDD6;font-size:13px;color:#9E9891}
+.manager-link a{color:#2D6A4F;font-weight:500;cursor:pointer}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo" onclick="location.href='index.html'">Leave<b>Desk</b></div>
+  <div class="back-link" onclick="location.href='index.html'">← Back to home</div>
+</nav>
+
+<div class="page-body">
+  <div class="auth-card">
+    <div class="auth-toggle">
+      <button class="auth-toggle-btn active" id="btn-login" onclick="showMode('login')">Sign in</button>
+      <button class="auth-toggle-btn" id="btn-signup" onclick="showMode('signup')">Create account</button>
+    </div>
+
+    <!-- ERROR BANNER -->
+    <div class="error-banner" id="error-banner"></div>
+
+    <!-- LOGIN FORM -->
+    <div id="form-login">
+      <h2 class="auth-title">Welcome back</h2>
+      <p class="auth-sub">Sign in to your LeaveDesk account.</p>
+      <div class="fg" id="fg-login-email">
+        <label>Email address</label>
+        <input type="email" id="login-email" placeholder="you@company.com" onkeydown="if(event.key==='Enter')doLogin()">
+        <div class="err-msg">Please enter your email.</div>
+      </div>
+      <div class="fg" id="fg-login-pw">
+        <label>Password</label>
+        <input type="password" id="login-pw" placeholder="Your password" onkeydown="if(event.key==='Enter')doLogin()">
+        <div class="err-msg">Please enter your password.</div>
+      </div>
+      <button class="btn-submit" id="login-btn" onclick="doLogin()">Sign in</button>
+    </div>
+
+    <!-- SIGNUP FORM -->
+    <div id="form-signup" style="display:none">
+      <h2 class="auth-title">Create your account</h2>
+      <p class="auth-sub">Free account. No credit card needed.</p>
+      <div class="fg" id="fg-su-name">
+        <label>Full name</label>
+        <input type="text" id="su-name" placeholder="e.g. Ahmad Riza" onkeydown="if(event.key==='Enter')doSignup()">
+        <div class="err-msg">Please enter your full name.</div>
+      </div>
+      <div class="fg" id="fg-su-email">
+        <label>Email address</label>
+        <input type="email" id="su-email" placeholder="you@company.com" onkeydown="if(event.key==='Enter')doSignup()">
+        <div class="err-msg">Please enter a valid email.</div>
+      </div>
+      <div class="fg" id="fg-su-pw">
+        <label>Password</label>
+        <input type="password" id="su-pw" placeholder="At least 6 characters" onkeydown="if(event.key==='Enter')doSignup()">
+        <div class="err-msg">Password must be at least 6 characters.</div>
+      </div>
+      <button class="btn-submit" id="signup-btn" onclick="doSignup()">Create account</button>
+    </div>
+
+    <div class="manager-link">
+      Are you a manager? <a onclick="location.href='manager.html'">Manager portal →</a>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+firebase.initializeApp(FIREBASE_CONFIG);
+var auth = firebase.auth();
+var db   = firebase.database();
+
+/* Set mode from URL param */
+var mode = new URLSearchParams(location.search).get('mode') || 'login';
+showMode(mode);
+
+/* If already logged in, go straight to employee */
+auth.onAuthStateChanged(function(user){
+  if(user) location.href='employee.html';
+});
+
+function showMode(m){
+  document.getElementById('form-login').style.display  = m==='login'  ? 'block':'none';
+  document.getElementById('form-signup').style.display = m==='signup' ? 'block':'none';
+  document.getElementById('btn-login').classList.toggle('active', m==='login');
+  document.getElementById('btn-signup').classList.toggle('active', m==='signup');
+  clearErrs();
+  document.getElementById('error-banner').style.display='none';
+}
+
+function clearErrs(){document.querySelectorAll('.field-err').forEach(function(el){el.classList.remove('field-err');});}
+function setErr(id,msg){var fg=document.getElementById(id);fg.classList.add('field-err');if(msg)fg.querySelector('.err-msg').textContent=msg;}
+function showErr(msg){var b=document.getElementById('error-banner');b.textContent=msg;b.style.display='block';}
+
+async function doLogin(){
+  clearErrs();
+  document.getElementById('error-banner').style.display='none';
+  var email=document.getElementById('login-email').value.trim();
+  var pw=document.getElementById('login-pw').value;
+  if(!email){setErr('fg-login-email','Please enter your email.');return;}
+  if(!pw){setErr('fg-login-pw','Please enter your password.');return;}
+  var btn=document.getElementById('login-btn');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Signing in...';
+  try{
+    await auth.signInWithEmailAndPassword(email,pw);
+    /* onAuthStateChanged will redirect */
+  } catch(e){
+    btn.disabled=false;btn.innerHTML='Sign in';
+    var msg='Incorrect email or password.';
+    if(e.code==='auth/user-not-found'||e.code==='auth/wrong-password'||e.code==='auth/invalid-credential')msg='Incorrect email or password.';
+    else if(e.code==='auth/too-many-requests')msg='Too many attempts. Please try again later.';
+    else if(e.code==='auth/invalid-email')msg='Please enter a valid email address.';
+    showErr(msg);
+  }
+}
+
+async function doSignup(){
+  clearErrs();
+  document.getElementById('error-banner').style.display='none';
+  var name=document.getElementById('su-name').value.trim();
+  var email=document.getElementById('su-email').value.trim();
+  var pw=document.getElementById('su-pw').value;
+  if(!name){setErr('fg-su-name','Please enter your full name.');return;}
+  if(!email||email.indexOf('@')<0){setErr('fg-su-email','Please enter a valid email.');return;}
+  if(pw.length<6){setErr('fg-su-pw','Password must be at least 6 characters.');return;}
+  var btn=document.getElementById('signup-btn');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Creating account...';
+  try{
+    var cred=await auth.createUserWithEmailAndPassword(email,pw);
+    await cred.user.updateProfile({displayName:name});
+    await db.ref('/users/'+cred.user.uid).set({name:name,email:email,uid:cred.user.uid,joined:Date.now()});
+    /* onAuthStateChanged will redirect */
+  } catch(e){
+    btn.disabled=false;btn.innerHTML='Create account';
+    var msg='Could not create account.';
+    if(e.code==='auth/email-already-in-use')msg='This email is already registered. Try signing in instead.';
+    else if(e.code==='auth/invalid-email')msg='Please enter a valid email address.';
+    else if(e.code==='auth/weak-password')msg='Password is too weak. Please use at least 6 characters.';
+    showErr(msg);
+  }
+}
+</script>
+</body>
+</html>
