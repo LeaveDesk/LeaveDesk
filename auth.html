@@ -107,6 +107,12 @@ firebase.initializeApp(FIREBASE_CONFIG);
 var auth = firebase.auth();
 var db   = firebase.database();
 
+/* Check config is filled in */
+if(typeof FIREBASE_CONFIG === 'undefined' || FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') {
+  document.getElementById('error-banner').textContent = '⚠️ config.js not set up yet. Open config.js and fill in your Firebase API key and project details.';
+  document.getElementById('error-banner').style.display = 'block';
+}
+
 /* Set mode from URL param */
 var mode = new URLSearchParams(location.search).get('mode') || 'login';
 showMode(mode);
@@ -143,10 +149,14 @@ async function doLogin(){
     /* onAuthStateChanged will redirect */
   } catch(e){
     btn.disabled=false;btn.innerHTML='Sign in';
-    var msg='Incorrect email or password.';
+    var msg;
     if(e.code==='auth/user-not-found'||e.code==='auth/wrong-password'||e.code==='auth/invalid-credential')msg='Incorrect email or password.';
-    else if(e.code==='auth/too-many-requests')msg='Too many attempts. Please try again later.';
+    else if(e.code==='auth/too-many-requests')msg='Too many attempts. Please wait a few minutes and try again.';
     else if(e.code==='auth/invalid-email')msg='Please enter a valid email address.';
+    else if(e.code==='auth/operation-not-allowed')msg='⚠️ Email sign-in is not enabled. Go to Firebase Console → Authentication → Sign-in method → Email/Password → Enable it.';
+    else if(e.code==='auth/invalid-api-key'||e.code==='auth/configuration-not-found')msg='⚠️ Firebase API key not set. Open config.js and fill in your Firebase details.';
+    else if(e.code==='auth/network-request-failed')msg='Network error. Check your connection and try again.';
+    else msg='Error ('+e.code+'): '+e.message;
     showErr(msg);
   }
 }
@@ -169,10 +179,14 @@ async function doSignup(){
     /* onAuthStateChanged will redirect */
   } catch(e){
     btn.disabled=false;btn.innerHTML='Create account';
-    var msg='Could not create account.';
+    var msg;
     if(e.code==='auth/email-already-in-use')msg='This email is already registered. Try signing in instead.';
     else if(e.code==='auth/invalid-email')msg='Please enter a valid email address.';
-    else if(e.code==='auth/weak-password')msg='Password is too weak. Please use at least 6 characters.';
+    else if(e.code==='auth/weak-password')msg='Password is too weak. Use at least 6 characters.';
+    else if(e.code==='auth/operation-not-allowed')msg='⚠️ Email sign-in is not enabled in Firebase. Go to Firebase Console → Authentication → Sign-in method → Email/Password → Enable it.';
+    else if(e.code==='auth/invalid-api-key'||e.code==='auth/configuration-not-found')msg='⚠️ Firebase API key not set. Open config.js and fill in your Firebase details.';
+    else if(e.code==='auth/network-request-failed')msg='Network error. Check your connection and try again.';
+    else msg='Error ('+e.code+'): '+e.message;
     showErr(msg);
   }
 }
