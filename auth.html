@@ -104,7 +104,7 @@ input:focus{border-color:#2D6A4F;box-shadow:0 0 0 3px rgba(45,106,79,0.1)}
         <strong>On mobile?</strong> Open your email app → find the email from <em>noreply@leavedesk2.firebaseapp.com</em> → tap the link → come back here and sign in.<br><br>
         Can't find it? Check your <strong>Spam / Junk</strong> folder.
         <br><button class="btn-resend" onclick="resendVerify()">📨 Resend verification email</button>
-        <br><button class="btn-resend" onclick="auth.currentUser&&auth.currentUser.reload().then(function(){if(auth.currentUser&&auth.currentUser.emailVerified){location.href='employee.html';}else{showErr('Email not verified yet. Check your inbox.');}}).catch(function(){})" style="margin-top:4px">🔄 I've verified — reload</button>
+        <br><button class="btn-resend" onclick="checkVerified()" style="margin-top:4px">🔄 I've verified — sign in now</button>
       </div>
     </div>
 
@@ -290,6 +290,18 @@ async function sendReset(){
 }
 
 /* ── RESEND VERIFY ── */
+async function checkVerified(){
+  if(!auth.currentUser){showErr('Please sign in again first.');return;}
+  try{
+    await auth.currentUser.reload();
+    if(auth.currentUser.emailVerified){
+      location.href='employee.html';
+    } else {
+      showErr('Your email is not verified yet. Check your inbox (including spam) and click the link, then try again.');
+    }
+  }catch(e){showErr('Could not check status. Try signing in again.');}
+}
+
 async function resendVerify(){
   if(!pendingVerifyUser){showErr('Please sign in again and click Resend.');return;}
   try{

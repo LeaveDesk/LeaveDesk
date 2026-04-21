@@ -229,10 +229,19 @@ hr.sep{border:none;border-top:1px solid var(--bd);margin:16px 0}
 firebase.initializeApp(FIREBASE_CONFIG);
 var auth=firebase.auth(), db=firebase.database();
 
-/* Init EmailJS if enabled */
-if(typeof EMAILJS_ENABLED!=='undefined' && EMAILJS_ENABLED){
-  emailjs.init(EMAILJS_PUBLIC_KEY);
+/* Init EmailJS if enabled — wait for SDK to load */
+function initEmailJS(){
+  if(typeof EMAILJS_ENABLED==='undefined'||!EMAILJS_ENABLED)return;
+  if(typeof emailjs==='undefined'){
+    setTimeout(initEmailJS,500); /* retry if SDK not ready */
+    return;
+  }
+  try{
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+    console.log('EmailJS initialised');
+  }catch(e){console.error('EmailJS init failed:',e);}
 }
+initEmailJS();
 var currentUser=null, allRequests=[], calEvents=[];
 var cal={y:new Date().getFullYear(),m:new Date().getMonth()};
 
@@ -240,10 +249,16 @@ var cal={y:new Date().getFullYear(),m:new Date().getMonth()};
 auth.onAuthStateChanged(function(user){
   if(!user){location.href='auth.html';return;}
   if(!user.emailVerified){
-    /* Show verification banner instead of locking out */
     currentUser=user;
     document.getElementById('loading-screen').style.display='none';
     document.getElementById('verify-banner').style.display='flex';
+    /* Still set name/avatar so page isn't blank */
+    var n=user.displayName||user.email.split('@')[0];
+    document.getElementById('emp-name').value=n;
+    var ini=n.split(' ').map(function(x){return x[0];}).join('').slice(0,2).toUpperCase();
+    document.getElementById('user-avatar').textContent=ini;
+    document.getElementById('user-name-nav').textContent=n;
+    return; /* stop here — don't load app until verified */
   }
   currentUser=user;
   var name=user.displayName||user.email.split('@')[0];

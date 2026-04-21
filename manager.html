@@ -338,20 +338,39 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
 <script src="config.js"></script>
 <script>
 var DBURL='https://leavedesk2-default-rtdb.asia-southeast1.firebasedatabase.app';
-var requests=[],calEvents=[],selectedKeys=new Set(),pendingRejectKey=null;
+var requests=[],calEvents=[],allUsers=[],selectedKeys=new Set(),pendingRejectKey=null;
 var cal={y:new Date().getFullYear(),m:new Date().getMonth()};
-var loggedIn=sessionStorage.getItem('mgr_logged')==='1';
+var loggedIn=false;
 
-if(loggedIn)showDashboard();
-renderCal();
+/* Wait for DOM then restore session */
+document.addEventListener('DOMContentLoaded',function(){
+  renderCal();
+  if(sessionStorage.getItem('mgr_logged')==='1'){
+    loggedIn=true;
+    showDashboard();
+    loadAndRenderRequests();
+  }
+});
 
 function checkPw(){
   var pw=document.getElementById('mgr-pw').value;
-  if(pw===MGR_PW){
-    loggedIn=true;sessionStorage.setItem('mgr_logged','1');
+  if(!pw){return;}
+  /* Fallback if config.js failed to load */
+  var correctPw=(typeof MGR_PW!=='undefined'&&MGR_PW)?MGR_PW:'admin4321';
+  if(pw===correctPw){
+    loggedIn=true;
+    sessionStorage.setItem('mgr_logged','1');
     document.getElementById('fg-pw').classList.remove('field-err');
-    showDashboard();loadAndRenderRequests();
-  } else document.getElementById('fg-pw').classList.add('field-err');
+    showDashboard();
+    loadAndRenderRequests();
+  } else {
+    var fg=document.getElementById('fg-pw');
+    fg.classList.add('field-err');
+    fg.querySelector('.err-msg').textContent='Incorrect password. Try again.';
+    var inp=document.getElementById('mgr-pw');
+    inp.style.animation='shake 0.4s';
+    setTimeout(function(){inp.style.animation='';},400);
+  }
 }
 
 function showDashboard(){
@@ -362,12 +381,14 @@ function showDashboard(){
 }
 
 function mgrLogout(){
-  loggedIn=false;sessionStorage.removeItem('mgr_logged');
-  requests=[];selectedKeys.clear();
+  loggedIn=false;
+  sessionStorage.removeItem('mgr_logged');
+  requests=[];allUsers=[];calEvents=[];selectedKeys.clear();
   hideAll();show('v-lock');
   document.getElementById('tabbar').style.display='none';
   document.getElementById('mgr-badge').style.display='none';
   document.getElementById('mgr-pw').value='';
+  document.title='Manager Portal — LeaveDesk';
   showToast('Signed out.');
 }
 
