@@ -256,7 +256,22 @@ auth.onAuthStateChanged(function(user){
   document.getElementById('start-date').min=today;
   document.getElementById('end-date').min=today;
   renderCal();
+  /* Ensure user profile exists in /users/ for manager staff list */
+  ensureUserProfile(user);
 });
+
+function ensureUserProfile(user){
+  var name=user.displayName||user.email.split('@')[0];
+  var ref='https://leavedesk2-default-rtdb.asia-southeast1.firebasedatabase.app/users/'+user.uid+'.json';
+  fetch(ref).then(function(r){return r.json();}).then(function(d){
+    if(!d){
+      /* Profile missing — write it now */
+      fetch(ref,{method:'PUT',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({name:name,email:user.email,uid:user.uid,joined:Date.now()})
+      });
+    }
+  }).catch(function(){});
+}
 
 function doSignOut(){auth.signOut().then(function(){location.href='index.html';});}
 
