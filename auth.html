@@ -240,13 +240,7 @@ async function doSignup(){
   try{
     var cred=await auth.createUserWithEmailAndPassword(email,pw);
     await cred.user.updateProfile({displayName:name});
-    /* Write user profile — retry once if it fails */
-    try{
-      await db.ref('/users/'+cred.user.uid).set({name:name,email:email,uid:cred.user.uid,joined:Date.now()});
-    }catch(dbErr){
-      /* Retry once */
-      try{ await db.ref('/users/'+cred.user.uid).set({name:name,email:email,uid:cred.user.uid,joined:Date.now()}); }catch(e2){}
-    }
+    await db.ref('/users/'+cred.user.uid).set({name:name,email:email,uid:cred.user.uid,joined:Date.now()});
     await cred.user.sendEmailVerification();
     await auth.signOut();
     btn.disabled=false;btn.innerHTML='Create account';
