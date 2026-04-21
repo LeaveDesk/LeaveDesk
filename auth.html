@@ -100,8 +100,11 @@ input:focus{border-color:#2D6A4F;box-shadow:0 0 0 3px rgba(45,106,79,0.1)}
       <button class="btn-submit" id="li-btn" onclick="doLogin()">Sign in</button>
       <div class="verify-box" id="verify-box">
         <strong>📧 Please verify your email first</strong>
-        Check your inbox for a verification link. Check spam too.
-        <br><button class="btn-resend" onclick="resendVerify()">Resend verification email</button>
+        A verification link was sent to your email when you signed up.<br><br>
+        <strong>On mobile?</strong> Open your email app → find the email from <em>noreply@leavedesk2.firebaseapp.com</em> → tap the link → come back here and sign in.<br><br>
+        Can't find it? Check your <strong>Spam / Junk</strong> folder.
+        <br><button class="btn-resend" onclick="resendVerify()">📨 Resend verification email</button>
+        <br><button class="btn-resend" onclick="auth.currentUser&&auth.currentUser.reload().then(function(){if(auth.currentUser&&auth.currentUser.emailVerified){location.href='employee.html';}else{showErr('Email not verified yet. Check your inbox.');}}).catch(function(){})" style="margin-top:4px">🔄 I've verified — reload</button>
       </div>
     </div>
 
@@ -240,14 +243,20 @@ async function doSignup(){
   try{
     var cred=await auth.createUserWithEmailAndPassword(email,pw);
     await cred.user.updateProfile({displayName:name});
-    await db.ref('/users/'+cred.user.uid).set({name:name,email:email,uid:cred.user.uid,joined:Date.now()});
+    /* Write user profile — retry once if it fails */
+    try{
+      await db.ref('/users/'+cred.user.uid).set({name:name,email:email,uid:cred.user.uid,joined:Date.now()});
+    }catch(dbErr){
+      /* Retry once */
+      try{ await db.ref('/users/'+cred.user.uid).set({name:name,email:email,uid:cred.user.uid,joined:Date.now()}); }catch(e2){}
+    }
     await cred.user.sendEmailVerification();
     await auth.signOut();
     btn.disabled=false;btn.innerHTML='Create account';
     ['su-name','su-email','su-pw'].forEach(function(i){document.getElementById(i).value='';});
     document.getElementById('pw-fill').style.width='0';document.getElementById('pw-val').textContent='';
     showMode('login');
-    showOk('Account created! Check <strong>'+email+'</strong> for a verification link, then sign in here.');
+    showOk('✅ Account created!<br><br>A verification email was sent to <strong>'+email+'</strong>.<br><br><strong>On mobile:</strong> Open your email app, find the email from Firebase/LeaveDesk, tap the link, then come back and sign in.<br>Check your <strong>Spam</strong> folder if you can\'t find it.');
   }catch(e){
     btn.disabled=false;btn.innerHTML='Create account';
     var msg;

@@ -256,7 +256,22 @@ auth.onAuthStateChanged(function(user){
   document.getElementById('start-date').min=today;
   document.getElementById('end-date').min=today;
   renderCal();
+  /* Ensure user profile exists in /users/ for manager staff list */
+  ensureUserProfile(user);
 });
+
+function ensureUserProfile(user){
+  var name=user.displayName||user.email.split('@')[0];
+  var ref='https://leavedesk2-default-rtdb.asia-southeast1.firebasedatabase.app/users/'+user.uid+'.json';
+  fetch(ref).then(function(r){return r.json();}).then(function(d){
+    if(!d){
+      /* Profile missing — write it now */
+      fetch(ref,{method:'PUT',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({name:name,email:user.email,uid:user.uid,joined:Date.now()})
+      });
+    }
+  }).catch(function(){});
+}
 
 function doSignOut(){auth.signOut().then(function(){location.href='index.html';});}
 
@@ -483,17 +498,44 @@ document.getElementById('modal-day').addEventListener('click',function(e){if(e.t
 
 /* Email notification to manager */
 function sendManagerNotification(data){
-  if(typeof EMAILJS_ENABLED==='undefined'||!EMAILJS_ENABLED)return;
-  emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-    to_email:    MANAGER_EMAIL_TO,
-    from_name:   data.name,
-    leave_type:  data.type,
-    start_date:  fmtD(data.start),
-    end_date:    fmtD(data.end),
-    days:        data.days,
-    reason:      data.reason,
-    message:     data.name+' has submitted a '+data.type+' request for '+data.days+' day(s) ('+fmtD(data.start)+' – '+fmtD(data.end)+').'
-  }).catch(function(e){console.log('Email notification failed:',e);});
+  if(typeof EMAILJS_ENABLED==='undefined'||!EMAILJS_ENABLED){
+    console.log('EmailJS: disabled in config.js');return;
+  }
+  if(typeof emailjs==='undefined'){
+    console.error('EmailJS SDK not loaded — check internet connection');return;
+  }
+  if(!EMAILJS_SERVICE_ID||EMAILJS_SERVICE_ID==='YOUR_SERVICE_ID'){
+    console.error('EmailJS: SERVICE_ID not set in config.js');return;
+  }
+  if(!EMAILJS_TEMPLATE_ID||EMAILJS_TEMPLATE_ID==='YOUR_TEMPLATE_ID'){
+    console.error('EmailJS: TEMPLATE_ID not set in config.js');return;
+  }
+  if(!MANAGER_EMAIL_TO||MANAGER_EMAIL_TO==='YOUR_MANAGER_EMAIL@gmail.com'){
+    console.error('EmailJS: MANAGER_EMAIL_TO not set in config.js');return;
+  }
+  var params={
+    to_email:   MANAGER_EMAIL_TO,
+    to_name:    'Manager',
+    from_name:  data.name,
+    leave_type: data.type,
+    start_date: fmtD(data.start),
+    end_date:   fmtD(data.end),
+    days:       String(data.days),
+    reason:     data.reason||'(none)',
+    reply_to:   MANAGER_EMAIL_TO,
+    message:    data.name+' submitted a '+data.type+' request from '+fmtD(data.start)+' to '+fmtD(data.end)+' ('+data.days+' working day'+(data.days>1?'s':'')+')'+(data.reason?'. Reason: '+data.reason:'')+'.'
+  };
+  console.log('EmailJS: sending to',MANAGER_EMAIL_TO,'via service',EMAILJS_SERVICE_ID,'template',EMAILJS_TEMPLATE_ID);
+  emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, params)
+    .then(function(res){
+      console.log('EmailJS: sent successfully',res.status,res.text);
+      showToast('✉️ Manager notified by email');
+    })
+    .catch(function(err){
+      console.error('EmailJS error:',JSON.stringify(err));
+      /* Show user-visible error for debugging */
+      showToast('Note: email notification failed ('+( err.text||err.status||'unknown')+')');
+    });
 }
 
 function fmtD(d){if(!d)return'';return new Date(d+'T00:00:00').toLocaleDateString('en-SG',{day:'2-digit',month:'short',year:'numeric'});}
