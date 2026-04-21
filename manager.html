@@ -125,6 +125,20 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
 .ev-meta{font-size:12.5px;color:var(--t2)}
 .ev-note{font-size:12px;color:var(--t3);font-style:italic;margin-top:3px}
 .ev-badge{font-size:11px;background:#EEF2FF;color:#3730A3;border:1px solid #C7D2FE;padding:2px 8px;border-radius:40px;white-space:nowrap;flex-shrink:0}
+/* STAFF CARDS */
+.staff-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);padding:16px 18px;margin-bottom:10px;display:flex;align-items:center;gap:14px;box-shadow:0 1px 3px rgba(0,0,0,0.03);transition:border-color 0.13s}
+.staff-card:hover{border-color:var(--bd2)}
+.staff-av{width:40px;height:40px;border-radius:50%;background:var(--al);color:var(--at);font-weight:600;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid #B7DEC9}
+.staff-info{flex:1;min-width:0}
+.staff-name{font-weight:600;font-size:14px;margin-bottom:2px}
+.staff-email{font-size:12.5px;color:var(--t2)}
+.staff-joined{font-size:11px;color:var(--t3);margin-top:2px}
+.staff-bal{display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0}
+.bal-pill{font-size:11px;font-weight:500;padding:3px 10px;border-radius:40px;white-space:nowrap;border:1px solid}
+.bal-pill.ok{background:var(--al);color:var(--at);border-color:#B7DEC9}
+.bal-pill.warn{background:var(--wl);color:var(--wt);border-color:#EDD69A}
+.bal-pill.danger{background:var(--dl);color:var(--dt);border-color:#F5B7B1}
+
 /* EMPTY/LOADING */
 .empty{text-align:center;padding:40px 20px;color:var(--t3);font-size:14px;background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl)}
 .loading{text-align:center;padding:36px;color:var(--t3);font-size:14px}
@@ -142,6 +156,7 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
 /* TOAST */
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--tx);color:#fff;padding:11px 22px;border-radius:40px;font-size:13px;font-weight:500;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);z-index:999;white-space:nowrap;pointer-events:none}
 .toast.show{transform:translateX(-50%) translateY(0)}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
 @media(max-width:480px){.form-row{grid-template-columns:1fr}.wrap{padding:20px 14px 50px}.tab{padding:10px 10px;font-size:12.5px}.cal-cell{min-height:46px}.ev{display:none}}
 </style>
 </head>
@@ -156,7 +171,8 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
 </nav>
 
 <div class="tabbar" id="tabbar" style="display:none">
-  <button class="tab active" onclick="goTab('requests',this)">📋 Requests</button>
+  <button class="tab active" onclick="goTab('requests',this)">📋 Requests <span id="pending-badge" style="display:none;background:#C0392B;color:#fff;font-size:11px;font-weight:600;padding:2px 7px;border-radius:40px;margin-left:5px;align-items:center;justify-content:center">0</span></button>
+  <button class="tab" onclick="goTab('staff',this)">👥 Staff</button>
   <button class="tab" onclick="goTab('cal',this)">📅 Calendar</button>
 </div>
 
@@ -215,6 +231,15 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
       <button class="btn-clear" onclick="archiveResolved()">🗂 Archive resolved</button>
     </div>
     <div id="req-list"></div>
+  </div>
+
+  <!-- STAFF -->
+  <div class="view" id="v-staff">
+    <div class="ph"><h1>Staff accounts</h1><p>All registered employee accounts and their leave usage this year.</p></div>
+    <div id="staff-search-row" style="margin-bottom:16px;max-width:360px">
+      <input type="text" id="staff-search" placeholder="Search by name or email..." oninput="filterStaff()" style="width:100%;padding:9px 12px;border:1px solid var(--bd);border-radius:var(--r);font-family:DM Sans,sans-serif;font-size:14px;outline:none;transition:border 0.15s,box-shadow 0.15s" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--bd)'">
+    </div>
+    <div id="staff-list"><div class="loading">Loading staff...</div></div>
   </div>
 
   <!-- CALENDAR -->
@@ -334,6 +359,7 @@ function goTab(id,btn){
   hideAll();show('v-'+id);window.scrollTo(0,0);
   if(id==='requests')loadAndRenderRequests();
   if(id==='cal')loadAndRenderCal();
+  if(id==='staff')loadAndRenderStaff();
 }
 
 /* DB */
@@ -361,6 +387,10 @@ function renderRequests(){
     '<div class="stat"><div class="stat-n">'+rj+'</div><div class="stat-l">Rejected</div></div>';
   document.getElementById('sel-all-row').style.display=p>0?'flex':'none';
   document.getElementById('clear-row').style.display=(a+rj)>0?'flex':'none';
+  /* Update pending badge */
+  var badge=document.getElementById('pending-badge');
+  if(badge){badge.textContent=p;badge.style.display=p>0?'inline-flex':'none';}
+  document.title=p>0?'('+p+') Requests — LeaveDesk':'Requests — LeaveDesk';
   var fl=requests.slice();
   if(fs!=='all')fl=fl.filter(function(r){return r.status===fs;});
   if(ft!=='all')fl=fl.filter(function(r){return r.type===ft;});
@@ -552,6 +582,58 @@ async function deleteEvent(key){
   var ok=await dbDel('/events/'+key);
   if(ok){calEvents=calEvents.filter(function(e){return e._key!==key;});renderCal();renderEvList();showToast('Deleted.');}
   else showToast('Delete failed.');
+}
+
+/* ── STAFF ── */
+async function loadAndRenderStaff(){
+  document.getElementById('staff-list').innerHTML='<div class="loading">Loading staff...</div>';
+  var d=await dbGet('/users');
+  allUsers=d?Object.values(d):[];
+  /* Load all requests + archive to compute balances */
+  var reqs=await loadReqs();
+  var archData=await dbGet('/archive');
+  var arch=archData?Object.values(archData):[];
+  var combined=reqs.concat(arch);
+  allUsers.forEach(function(u){
+    u._usage={};
+    combined.filter(function(r){return r.status==='Approved'&&r.name&&u.name&&r.name.toLowerCase()===u.name.toLowerCase();})
+      .forEach(function(r){u._usage[r.type]=(u._usage[r.type]||0)+(r.days||0);});
+  });
+  allUsers.sort(function(a,b){return (a.name||'').localeCompare(b.name||'');});
+  renderStaff(allUsers);
+}
+
+function filterStaff(){
+  var q=document.getElementById('staff-search').value.toLowerCase();
+  var filtered=allUsers.filter(function(u){
+    return (u.name||'').toLowerCase().includes(q)||(u.email||'').toLowerCase().includes(q);
+  });
+  renderStaff(filtered);
+}
+
+function renderStaff(users){
+  var el=document.getElementById('staff-list');
+  if(!users.length){el.innerHTML='<div class="empty">No staff accounts found.</div>';return;}
+  el.innerHTML=users.map(function(u){
+    var ini=(u.name||'?').split(' ').map(function(n){return n[0];}).join('').slice(0,2).toUpperCase();
+    var joined=u.joined?new Date(u.joined).toLocaleDateString('en-SG',{day:'2-digit',month:'short',year:'numeric'}):'—';
+    var pills=['Annual leave','Medical leave','Emergency leave'].map(function(t){
+      var used=u._usage&&u._usage[t]?u._usage[t]:0;
+      var total=ENTITLEMENTS[t]||4;
+      var rem=Math.max(0,total-used);
+      var cls=rem===0?'danger':rem===1?'warn':'ok';
+      return '<span class="bal-pill '+cls+'">'+t.replace(' leave','').substring(0,3)+': '+rem+'/'+total+'</span>';
+    }).join('');
+    return '<div class="staff-card">'+
+      '<div class="staff-av">'+ini+'</div>'+
+      '<div class="staff-info">'+
+        '<div class="staff-name">'+esc(u.name||'Unknown')+'</div>'+
+        '<div class="staff-email">'+esc(u.email||'')+'</div>'+
+        '<div class="staff-joined">Joined '+joined+'</div>'+
+      '</div>'+
+      '<div class="staff-bal">'+pills+'</div>'+
+    '</div>';
+  }).join('');
 }
 
 function fmtD(d){if(!d)return'';return new Date(d+'T00:00:00').toLocaleDateString('en-SG',{day:'2-digit',month:'short',year:'numeric'});}
