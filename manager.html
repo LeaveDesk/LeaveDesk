@@ -45,7 +45,7 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
 .field-err .err-msg{display:block}
 /* BUTTONS */
 .btn-p{display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 20px;background:var(--ac);color:#fff;border:none;border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:background 0.15s,opacity 0.15s;width:100%;margin-top:16px}
-.btn-p:hover{background:#236040}.btn-p:enable{opacity:0.55;cursor:allowed}
+.btn-p:hover{background:#236040}.btn-p:disabled{opacity:0.55;cursor:not-allowed}
 .btn-approve{padding:6px 14px;border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:500;cursor:pointer;border:1px solid #B7DEC9;background:var(--al);color:var(--at);transition:all 0.15s}
 .btn-approve:hover{background:#C5E8D2}
 .btn-reject{padding:6px 14px;border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:500;cursor:pointer;border:1px solid #F5B7B1;background:var(--dl);color:var(--dt);transition:all 0.15s}
@@ -354,7 +354,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 function checkPw(){
   var pw=document.getElementById('mgr-pw').value;
-  if(!pw){return;}
+  if(!pw){var fg=document.getElementById('fg-pw');fg.classList.add('field-err');fg.querySelector('.err-msg').textContent='Please enter the manager password.';return;}
   /* Fallback if config.js failed to load */
   var correctPw=(typeof MGR_PW!=='undefined'&&MGR_PW)?MGR_PW:'admin4321';
   if(pw===correctPw){
@@ -704,8 +704,8 @@ function renderStaff(users){
     }).join('');
     var actionBtns=u._uid?
       '<div style="display:flex;gap:6px">'+
-        '<button class="btn-rename-staff" onclick="openRenameStaff(''+u._uid+'',''+esc(u.name||'')+'')">Rename</button>'+
-        '<button class="btn-del-staff" onclick="confirmDeleteStaff(''+u._uid+'',''+esc(u.name||'')+'')">Remove</button>'+
+        '<button class="btn-rename-staff" data-uid="'+esc(u._uid)+'" data-name="'+esc(u.name||'')+'" onclick="openRenameStaff(this.dataset.uid,this.dataset.name)">Rename</button>'+
+        '<button class="btn-del-staff" data-uid="'+esc(u._uid)+'" data-name="'+esc(u.name||'')+'" onclick="confirmDeleteStaff(this.dataset.uid,this.dataset.name)">Remove</button>'+
       '</div>':
       '<span style="font-size:11px;color:var(--t3)">No account</span>';
     return '<div class="staff-card" id="sc-'+u._uid+'">'+
@@ -747,9 +747,7 @@ async function saveRename(){
 
 async function confirmDeleteStaff(uid,name){
   if(!uid){showToast('Cannot remove this entry.');return;}
-  if(!confirm('Remove '+name+' from staff list?
-
-This removes their profile data. Their leave requests will remain in records. Note: their login account will still exist in Firebase Auth — they would need to be removed there manually if needed.'))return;
+  if(!confirm('Remove '+name+' from staff list?\n\nThis removes their profile data. Their leave requests will remain in records.\nNote: their Firebase Auth login account must be removed separately in the Firebase Console if needed.'))return;
   var ok=await dbDel('/users/'+uid);
   if(ok){
     allUsers=allUsers.filter(function(u){return u._uid!==uid;});

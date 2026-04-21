@@ -291,15 +291,16 @@ async function sendReset(){
 
 /* ── RESEND VERIFY ── */
 async function checkVerified(){
-  if(!auth.currentUser){showErr('Please sign in again first.');return;}
+  var u=auth.currentUser||pendingVerifyUser;
+  if(!u){showErr('Please enter your email and password above and click Sign in — if you verified your email it will work now.');return;}
   try{
-    await auth.currentUser.reload();
-    if(auth.currentUser.emailVerified){
+    await u.reload();
+    if(u.emailVerified){
       location.href='employee.html';
     } else {
-      showErr('Your email is not verified yet. Check your inbox (including spam) and click the link, then try again.');
+      showErr('Not verified yet. Check your inbox (including Spam) and click the link, then try again.');
     }
-  }catch(e){showErr('Could not check status. Try signing in again.');}
+  }catch(e){showErr('Could not check verification status. Try signing in again with your email and password.');}
 }
 
 async function resendVerify(){
