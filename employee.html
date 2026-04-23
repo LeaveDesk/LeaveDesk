@@ -178,7 +178,7 @@ hr.sep{border:none;border-top:1px solid var(--bd);margin:16px 0}
         <textarea id="reason" placeholder="Brief reason..."></textarea>
       </div>
       <button class="btn-p" id="submit-btn" onclick="submitRequest()">Submit leave request</button>
-      <div class="success-inline" id="success-inline">✅ Leave request submitted!</div>
+      <div class="success-inline" id="success-inline">✅ Leave request submitted! Your manager will review it shortly.</div>
     </div>
   </div>
 
@@ -429,10 +429,16 @@ async function loadMyRequests(){
     var used=usedByType[t]||0,total=ENTITLEMENTS[t]||4,rem=Math.max(0,total-used);
     var pct=Math.min(100,Math.round((used/total)*100));
     var fc=pct>=100?'danger':pct>75?'warn':'';
-    bh+='<div class="bal-card"><div class="bal-type">'+t.replace(' leave','')+'</div><div class="bal-nums"><span class="bal-big">'+rem+'</span><span class="bal-of">/ '+total+'d</span></div><div class="bal-bar"><div class="bal-fill '+fc+'" style="width:'+pct+'%"></div></div></div>';
+    var statusText=pct>=100?'All used':''+used+' used';
+    bh+='<div class="bal-card">'+
+      '<div class="bal-type">'+t.replace(' leave','')+'</div>'+
+      '<div class="bal-nums"><span class="bal-big">'+rem+'</span><span class="bal-of">/ '+total+' days</span></div>'+
+      '<div class="bal-bar"><div class="bal-fill '+fc+'" style="width:'+pct+'%"></div></div>'+
+      '<div style="font-size:11px;color:var(--t3);margin-top:4px">'+statusText+'</div>'+
+    '</div>';
   });
   bh+='</div>';bal.innerHTML=bh;
-  if(!all.length){list.innerHTML='<div class="empty">No leave requests yet. Submit one on the "Request leave" tab.</div>';return;}
+  if(!all.length){list.innerHTML='<div class="empty" style="text-align:center;padding:32px;color:var(--t3)"><p style="font-size:24px;margin-bottom:8px">📋</p><p style="font-weight:500;color:var(--t2);margin-bottom:6px">No leave requests yet</p><p style="font-size:13px">Go to <strong>Request leave</strong> to submit your first request.</p></div>';return;}
   var tbl='<table class="tbl"><thead><tr><th>Type</th><th>Dates</th><th>Days</th><th>Submitted</th><th>Status</th></tr></thead><tbody>';
   tbl+=all.map(function(r){
     var ds=fmtD(r.start)+(r.start!==r.end?' – '+fmtD(r.end):'');
@@ -541,15 +547,26 @@ function sendManagerNotification(data){
     message:    data.name+' submitted a '+data.type+' request from '+fmtD(data.start)+' to '+fmtD(data.end)+' ('+data.days+' working day'+(data.days>1?'s':'')+')'+(data.reason?'. Reason: '+data.reason:'')+'.'
   };
   console.log('EmailJS: sending to',MANAGER_EMAIL_TO,'via service',EMAILJS_SERVICE_ID,'template',EMAILJS_TEMPLATE_ID);
+  /* Wrap in timeout so a slow EmailJS never blocks the UI */
+  var ejsTimeout=setTimeout(function(){
+    console.warn('EmailJS: no response after 10s');
+  },10000);
   emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, params)
     .then(function(res){
-      console.log('EmailJS: sent successfully',res.status,res.text);
-      showToast('✉️ Manager notified by email');
+      clearTimeout(ejsTimeout);
+      console.log('EmailJS: sent successfully — status:',res.status,'text:',res.text);
+      if(res.status===200){
+        showToast('✉️ Manager notified by email');
+      } else {
+        console.warn('EmailJS: unexpected status',res.status);
+      }
     })
     .catch(function(err){
-      console.error('EmailJS error:',JSON.stringify(err));
-      /* Show user-visible error for debugging */
-      showToast('Note: email notification failed ('+( err.text||err.status||'unknown')+')');
+      clearTimeout(ejsTimeout);
+      var errDetail=err.text||err.status||JSON.stringify(err)||'unknown error';
+      console.error('EmailJS failed:',errDetail);
+      /* Helpful toast with the real error so it is easy to diagnose */
+      showToast('⚠️ Email alert failed: '+errDetail);
     });
 }
 
