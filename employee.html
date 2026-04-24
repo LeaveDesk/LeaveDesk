@@ -400,6 +400,8 @@ async function submitRequest(){
     document.getElementById('balance-warn').style.display='none';
     document.getElementById('success-inline').style.display='block';
     setTimeout(function(){document.getElementById('success-inline').style.display='none';},5000);
+    /* Email notification to manager */
+    sendManagerNotification({name:name,type:type,start:start,end:end,days:days,reason:reason||'(none)'});
   } else showToast('Failed — check database connection.');
 }
 
