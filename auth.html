@@ -1,51 +1,318 @@
-<!-- Fixed auth.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>LeaveDesk — Sign in</title>
-    <style>/* Original Styles preserved */</style>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LeaveDesk — Sign in</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:#F5F2ED;color:#1A1714;font-size:15px;min-height:100vh;display:flex;flex-direction:column}
+nav{background:#fff;border-bottom:1px solid #E2DDD6;padding:0 32px;height:54px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.logo{font-family:'DM Serif Display',serif;font-size:19px;letter-spacing:-0.3px;cursor:pointer}
+.logo b{color:#2D6A4F;font-weight:400}
+.back-link{font-size:13px;color:#6B6560;cursor:pointer;display:flex;align-items:center;gap:5px}
+.back-link:hover{color:#1A1714}
+.page-body{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px}
+.auth-card{background:#fff;border:1px solid #E2DDD6;border-radius:16px;padding:32px;width:100%;max-width:400px;box-shadow:0 2px 12px rgba(0,0,0,0.06)}
+.auth-toggle{display:flex;background:#F0EDE8;border-radius:40px;padding:3px;margin-bottom:26px}
+.atb{flex:1;padding:8px;border:none;background:transparent;border-radius:40px;font-family:'DM Sans',sans-serif;font-size:13.5px;font-weight:500;cursor:pointer;color:#6B6560;transition:all 0.15s}
+.atb.active{background:#fff;color:#1A1714;box-shadow:0 1px 4px rgba(0,0,0,0.1)}
+.auth-title{font-family:'DM Serif Display',serif;font-size:21px;font-weight:400;margin-bottom:5px}
+.auth-sub{font-size:13px;color:#6B6560;margin-bottom:22px;line-height:1.5}
+.fg{margin-bottom:14px}
+.flr{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+label{font-size:12.5px;font-weight:500;color:#6B6560}
+.la{background:none;border:none;font-family:'DM Sans',sans-serif;font-size:12px;color:#2D6A4F;cursor:pointer;font-weight:500;padding:0}
+.la:hover{text-decoration:underline}
+.input-wrap{position:relative}
+input{width:100%;padding:10px 12px;border:1px solid #E2DDD6;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;color:#1A1714;background:#fff;outline:none;transition:border 0.15s,box-shadow 0.15s}
+input:focus{border-color:#2D6A4F;box-shadow:0 0 0 3px rgba(45,106,79,0.1)}
+.tpw{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:12px;color:#9E9891;cursor:pointer;font-family:'DM Sans',sans-serif;padding:0}
+.pw-bg{height:4px;background:#E2DDD6;border-radius:2px;margin-top:7px;overflow:hidden}
+.pw-fill{height:100%;width:0;border-radius:2px;transition:all 0.3s}
+.pw-label-row{display:flex;justify-content:space-between;margin-top:3px}
+.pw-label-row span{font-size:11px;color:#9E9891}
+.pw-val{font-size:11px;font-weight:500}
+.err-msg{font-size:12px;color:#C0392B;margin-top:4px;display:none}
+.field-err input{border-color:#C0392B}
+.field-err .err-msg{display:block}
+.ebanner{border-radius:10px;padding:11px 14px;font-size:13.5px;margin-bottom:16px;display:none;line-height:1.6}
+.ebanner.err{background:#FDECEA;border:1px solid #F5B7B1;color:#7B241C}
+.ebanner.ok{background:#D8EDDF;border:1px solid #B7DEC9;color:#1B4332}
+.btn-submit{width:100%;padding:12px;background:#2D6A4F;color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:7px;transition:background 0.15s,opacity 0.15s}
+.btn-submit:hover{background:#236040}.btn-submit:disabled{opacity:0.55;cursor:not-allowed}
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.forgot-panel{display:none;background:#F0EDE8;border-radius:12px;padding:14px 16px;margin-top:12px}
+.forgot-panel p{font-size:13px;color:#6B6560;margin-bottom:10px;line-height:1.5}
+.forgot-row{display:flex;gap:8px}
+.forgot-row input{flex:1}
+.btn-reset{padding:10px 14px;background:#2D6A4F;color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap}
+.btn-reset:hover{background:#236040}
+.verify-box{display:none;background:#FFF7ED;border:1px solid #FED7AA;border-radius:10px;padding:14px 16px;font-size:13.5px;color:#9A3412;line-height:1.6;margin-top:12px}
+.verify-box strong{display:block;font-weight:600;margin-bottom:4px}
+.btn-resend{background:none;border:none;font-family:'DM Sans',sans-serif;font-size:13px;color:#9A3412;cursor:pointer;text-decoration:underline;padding:0;margin-top:6px}
+.bottom-link{text-align:center;margin-top:18px;padding-top:16px;border-top:1px solid #E2DDD6;font-size:13px;color:#9E9891}
+.bottom-link a{color:#2D6A4F;font-weight:500;cursor:pointer}
+</style>
 </head>
 <body>
-    <!-- Auth forms here -->
-    <script src="config.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    <script>
-        firebase.initializeApp(FIREBASE_CONFIG);
-        const auth = firebase.auth();
-        const db = firebase.database();
+<nav>
+  <div class="logo" onclick="location.href='index.html'">Leave<b>Desk</b></div>
+  <div class="back-link" onclick="location.href='index.html'">← Back to home</div>
+</nav>
+<div class="page-body">
+  <div class="auth-card">
+    <div class="auth-toggle">
+      <button class="atb active" id="btn-login"  onclick="showMode('login')">Sign in</button>
+      <button class="atb"        id="btn-signup" onclick="showMode('signup')">Create account</button>
+    </div>
+    <div class="ebanner err" id="ebanner-err"></div>
+    <div class="ebanner ok"  id="ebanner-ok"></div>
 
-        function showMode(m) {
-            document.getElementById('form-login').style.display = (m === 'login') ? 'block' : 'none';
-            document.getElementById('form-signup').style.display = (m === 'signup') ? 'block' : 'none';
-            // Reset error states on switch
-            document.querySelectorAll('.err-msg').forEach(el => el.style.display = 'none');
-        }
+    <!-- LOGIN -->
+    <div id="form-login">
+      <h2 class="auth-title">Welcome back</h2>
+      <p class="auth-sub">Sign in to your LeaveDesk account.</p>
+      <div class="fg" id="fg-li-email">
+        <label>Email address</label>
+        <input type="email" id="li-email" placeholder="you@gmail.com" onkeydown="if(event.key==='Enter')doLogin()">
+        <div class="err-msg">Please enter your email.</div>
+      </div>
+      <div class="fg" id="fg-li-pw">
+        <div class="flr">
+          <label>Password</label>
+          <button class="la" onclick="toggleForgot()">Forgot password?</button>
+        </div>
+        <div class="input-wrap">
+          <input type="password" id="li-pw" placeholder="Your password" style="padding-right:48px" onkeydown="if(event.key==='Enter')doLogin()">
+          <button class="tpw" onclick="togglePw('li-pw',this)">Show</button>
+        </div>
+        <div class="err-msg">Please enter your password.</div>
+      </div>
+      <div class="forgot-panel" id="forgot-panel">
+        <p>Enter your email and we'll send a password reset link.</p>
+        <div class="forgot-row">
+          <input type="email" id="reset-email" placeholder="your@email.com">
+          <button class="btn-reset" onclick="sendReset()">Send link</button>
+        </div>
+      </div>
+      <button class="btn-submit" id="li-btn" onclick="doLogin()">Sign in</button>
+      <div class="verify-box" id="verify-box">
+        <strong>📧 Please verify your email first</strong>
+        A verification link was sent to your email when you signed up.<br><br>
+        <strong>On mobile?</strong> Open your email app → find the email from <em>noreply@leavedesk2.firebaseapp.com</em> → tap the link → come back here and sign in.<br><br>
+        Can't find it? Check your <strong>Spam / Junk</strong> folder.
+        <br><button class="btn-resend" onclick="resendVerify()">📨 Resend verification email</button>
+        <br><button class="btn-resend" onclick="checkVerified()" style="margin-top:4px">🔄 I've verified — sign in now</button>
+      </div>
+    </div>
 
-        async function doSignup() {
-            const name = document.getElementById('su-name').value.trim();
-            const email = document.getElementById('su-email').value.trim();
-            const pw = document.getElementById('su-pw').value;
+    <!-- SIGNUP -->
+    <div id="form-signup" style="display:none">
+      <h2 class="auth-title">Create your account</h2>
+      <p class="auth-sub">Free account. No credit card needed.</p>
+      <div class="fg" id="fg-su-name">
+        <label>Full name</label>
+        <input type="text" id="su-name" placeholder="e.g. Ahmad Riza" onkeydown="if(event.key==='Enter')doSignup()">
+        <div class="err-msg">Please enter your first and last name.</div>
+      </div>
+      <div class="fg" id="fg-su-email">
+        <label>Email address</label>
+        <input type="email" id="su-email" placeholder="e.g. name@gmail.com" onkeydown="if(event.key==='Enter')doSignup()">
+        <div class="err-msg">Please enter a valid email address.</div>
+      </div>
+      <div class="fg" id="fg-su-pw">
+        <label>Password</label>
+        <div class="input-wrap">
+          <input type="password" id="su-pw" placeholder="At least 6 characters" style="padding-right:48px"
+            onkeydown="if(event.key==='Enter')doSignup()" oninput="checkPwStr(this.value)">
+          <button class="tpw" onclick="togglePw('su-pw',this)">Show</button>
+        </div>
+        <div class="pw-bg"><div class="pw-fill" id="pw-fill"></div></div>
+        <div class="pw-label-row"><span>Strength</span><span class="pw-val" id="pw-val"></span></div>
+        <div class="err-msg">Password must be at least 6 characters.</div>
+      </div>
+      <button class="btn-submit" id="su-btn" onclick="doSignup()">Create account</button>
+    </div>
 
-            if (name.split(' ').filter(Boolean).length < 2) {
-                alert("Please enter full name (First and Last).");
-                return;
-            }
+    <div class="bottom-link">
+      Are you a manager? <a onclick="location.href='manager.html'">Manager portal →</a>
+    </div>
+  </div>
+</div>
 
-            try {
-                const cred = await auth.createUserWithEmailAndPassword(email, pw);
-                await cred.user.updateProfile({ displayName: name });
-                await db.ref('users/' + cred.user.uid).set({ name, email, joined: Date.now() });
-                await cred.user.sendEmailVerification();
-                await auth.signOut();
-                alert("Account created! Please check your email for the verification link.");
-                showMode('login');
-            } catch (e) {
-                alert(e.message);
-            }
-        }
-    </script>
+<script src="config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+firebase.initializeApp(FIREBASE_CONFIG);
+var auth=firebase.auth(), db=firebase.database();
+var pendingVerifyUser=null;
+
+/* redirect if already logged in and verified */
+auth.onAuthStateChanged(function(user){
+  if(user && user.emailVerified){
+    location.href='employee.html';
+  }
+});
+
+var mode=new URLSearchParams(location.search).get('mode')||'login';
+showMode(mode);
+
+function showMode(m){
+  document.getElementById('form-login').style.display   = m==='login'  ?'block':'none';
+  document.getElementById('form-signup').style.display  = m==='signup' ?'block':'none';
+  document.getElementById('btn-login').classList.toggle('active',  m==='login');
+  document.getElementById('btn-signup').classList.toggle('active', m==='signup');
+  document.getElementById('ebanner-err').style.display='none';
+  document.getElementById('ebanner-ok').style.display='none';
+  document.getElementById('forgot-panel').style.display='none';
+  document.getElementById('verify-box').style.display='none';
+  clearErrs();
+}
+
+function clearErrs(){document.querySelectorAll('.field-err').forEach(function(e){e.classList.remove('field-err');});}
+function setErr(id,msg){var fg=document.getElementById(id);fg.classList.add('field-err');if(msg)fg.querySelector('.err-msg').textContent=msg;}
+function showErr(msg){var b=document.getElementById('ebanner-err');b.innerHTML=msg;b.style.display='block';document.getElementById('ebanner-ok').style.display='none';}
+function showOk(msg){var b=document.getElementById('ebanner-ok');b.innerHTML=msg;b.style.display='block';document.getElementById('ebanner-err').style.display='none';}
+
+function togglePw(id,btn){var inp=document.getElementById(id);inp.type=inp.type==='password'?'text':'password';btn.textContent=inp.type==='password'?'Show':'Hide';}
+function toggleForgot(){
+  var p=document.getElementById('forgot-panel');
+  p.style.display=p.style.display==='none'?'block':'none';
+  if(p.style.display==='block'){var v=document.getElementById('li-email').value;if(v)document.getElementById('reset-email').value=v;}
+}
+
+function checkPwStr(pw){
+  var fill=document.getElementById('pw-fill'),val=document.getElementById('pw-val');
+  var s=0;
+  if(pw.length>=6)s++;if(pw.length>=10)s++;if(/[A-Z]/.test(pw))s++;if(/[0-9]/.test(pw))s++;if(/[^A-Za-z0-9]/.test(pw))s++;
+  var c=['#E2DDD6','#C0392B','#E67E22','#F1C40F','#27AE60','#2D6A4F'];
+  var l=['','Weak','Fair','Good','Strong','Very strong'];
+  fill.style.width=(s*20)+'%';fill.style.background=c[s];val.textContent=l[s];val.style.color=c[s];
+}
+
+function isValidEmail(e){return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e.toLowerCase());}
+
+/* ── LOGIN ── */
+async function doLogin(){
+  clearErrs();document.getElementById('ebanner-err').style.display='none';document.getElementById('verify-box').style.display='none';
+  var email=document.getElementById('li-email').value.trim();
+  var pw=document.getElementById('li-pw').value;
+  if(!email){setErr('fg-li-email','Please enter your email.');return;}
+  if(!pw){setErr('fg-li-pw','Please enter your password.');return;}
+  var btn=document.getElementById('li-btn');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Signing in...';
+  try{
+    var cred=await auth.signInWithEmailAndPassword(email,pw);
+    if(!cred.user.emailVerified){
+      pendingVerifyUser=cred.user;
+      await auth.signOut();
+      btn.disabled=false;btn.innerHTML='Sign in';
+      document.getElementById('verify-box').style.display='block';
+      return;
+    }
+    /* onAuthStateChanged handles redirect */
+  }catch(e){
+    btn.disabled=false;btn.innerHTML='Sign in';
+    var msg;
+    if(e.code==='auth/user-not-found')msg='No account found with this email. <a style="color:#7B241C;font-weight:600;cursor:pointer" onclick="showMode(\'signup\')">Sign up instead →</a>';
+    else if(e.code==='auth/wrong-password'||e.code==='auth/invalid-credential'||e.code==='auth/invalid-login-credentials')msg='❌ Incorrect email or password. Double-check and try again.';
+    else if(e.code==='auth/too-many-requests')msg='⏳ Too many failed attempts. Please wait a few minutes.';
+    else if(e.code==='auth/invalid-email')msg='❌ Please enter a valid email address.';
+    else if(e.code==='auth/user-disabled')msg='❌ This account has been disabled. Contact your manager.';
+    else if(e.code==='auth/network-request-failed')msg='🌐 Network error. Check your internet connection.';
+    else msg='Something went wrong ('+e.code+'). Please try again.';
+    showErr(msg);
+  }
+}
+
+/* ── SIGNUP ── */
+async function doSignup(){
+  clearErrs();document.getElementById('ebanner-err').style.display='none';
+  var name=document.getElementById('su-name').value.trim();
+  var email=document.getElementById('su-email').value.trim();
+  var pw=document.getElementById('su-pw').value;
+  if(!name||name.split(' ').filter(Boolean).length<2){setErr('fg-su-name','Please enter your first and last name.');return;}
+  if(!email||!isValidEmail(email)){setErr('fg-su-email','Please enter a valid email (e.g. name@gmail.com).');return;}
+  if(pw.length<6){setErr('fg-su-pw','Password must be at least 6 characters.');return;}
+  var btn=document.getElementById('su-btn');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Creating account...';
+  try{
+    var cred=await auth.createUserWithEmailAndPassword(email,pw);
+    await cred.user.updateProfile({displayName:name});
+    /* Write user profile — retry once if it fails */
+    try{
+      await db.ref('/users/'+cred.user.uid).set({name:name,email:email,uid:cred.user.uid,joined:Date.now()});
+    }catch(dbErr){
+      /* Retry once */
+      try{ await db.ref('/users/'+cred.user.uid).set({name:name,email:email,uid:cred.user.uid,joined:Date.now()}); }catch(e2){}
+    }
+    await cred.user.sendEmailVerification();
+    await auth.signOut();
+    btn.disabled=false;btn.innerHTML='Create account';
+    ['su-name','su-email','su-pw'].forEach(function(i){document.getElementById(i).value='';});
+    document.getElementById('pw-fill').style.width='0';document.getElementById('pw-val').textContent='';
+    showMode('login');
+    showOk('✅ Account created!<br><br>A verification email was sent to <strong>'+email+'</strong>.<br><br><strong>On mobile:</strong> Open your email app, find the email from Firebase/LeaveDesk, tap the link, then come back and sign in.<br>Check your <strong>Spam</strong> folder if you can\'t find it.');
+  }catch(e){
+    btn.disabled=false;btn.innerHTML='Create account';
+    var msg;
+    if(e.code==='auth/email-already-in-use')msg='This email already has an account. <a style="color:#1B4332;font-weight:600;cursor:pointer" onclick="showMode(\'login\')">Sign in instead →</a>';
+    else if(e.code==='auth/invalid-email')msg='❌ Please enter a valid email address.';
+    else if(e.code==='auth/weak-password')msg='🔒 Password too weak. Add numbers or symbols.';
+    else if(e.code==='auth/operation-not-allowed')msg='⚠️ Email sign-in not enabled. Go to Firebase Console → Authentication → Sign-in method → Email/Password → Enable.';
+    else if(e.code==='auth/network-request-failed')msg='🌐 Network error. Check your connection.';
+    else msg='Something went wrong ('+e.code+'). Please try again.';
+    showErr(msg);
+  }
+}
+
+/* ── FORGOT PASSWORD ── */
+async function sendReset(){
+  var email=document.getElementById('reset-email').value.trim();
+  if(!email||!isValidEmail(email)){showErr('Please enter a valid email address to reset.');return;}
+  var btn=document.querySelector('.btn-reset');
+  btn.disabled=true;btn.textContent='Sending...';
+  try{
+    await auth.sendPasswordResetEmail(email);
+    document.getElementById('forgot-panel').style.display='none';
+    showOk('📧 Password reset link sent to <strong>'+email+'</strong>. Check your inbox and spam folder.');
+  }catch(e){
+    var msg=e.code==='auth/user-not-found'?'❌ No account found with that email.':
+            e.code==='auth/network-request-failed'?'🌐 Network error. Try again.':
+            'Could not send reset email. Try again.';
+    showErr(msg);
+  }
+  btn.disabled=false;btn.textContent='Send link';
+}
+
+/* ── RESEND VERIFY ── */
+async function checkVerified(){
+  var u=auth.currentUser||pendingVerifyUser;
+  if(!u){showErr('Please enter your email and password above and click Sign in — if you verified your email it will work now.');return;}
+  try{
+    await u.reload();
+    if(u.emailVerified){
+      location.href='employee.html';
+    } else {
+      showErr('Not verified yet. Check your inbox (including Spam) and click the link, then try again.');
+    }
+  }catch(e){showErr('Could not check verification status. Try signing in again with your email and password.');}
+}
+
+async function resendVerify(){
+  if(!pendingVerifyUser){showErr('Please sign in again and click Resend.');return;}
+  try{
+    await pendingVerifyUser.sendEmailVerification();
+    showOk('📧 Verification email resent! Check your inbox.');
+    document.getElementById('verify-box').style.display='none';
+  }catch(e){
+    showErr('Could not resend. Wait a few minutes and try again.');
+  }
+}
+</script>
 </body>
 </html>

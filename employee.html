@@ -1,36 +1,619 @@
-<!-- Fixed employee.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>LeaveDesk — My Dashboard</title>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LeaveDesk — My Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F5F2ED;--sf:#fff;--s2:#F0EDE8;--bd:#E2DDD6;--tx:#1A1714;--t2:#6B6560;--t3:#9E9891;--ac:#2D6A4F;--al:#D8EDDF;--at:#1B4332;--dn:#C0392B;--dl:#FDECEA;--dt:#7B241C;--wn:#B7791F;--wl:#FEFCE8;--wt:#7D5A0A;--r:10px;--rl:14px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);font-size:15px;min-height:100vh}
+/* NAV */
+nav{background:var(--sf);border-bottom:1px solid var(--bd);padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;gap:12px}
+.logo{font-family:'DM Serif Display',serif;font-size:18px;letter-spacing:-0.3px;cursor:pointer;flex-shrink:0}
+.logo b{color:var(--ac);font-weight:400}
+.user-info{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.user-avatar{width:30px;height:30px;border-radius:50%;background:var(--al);color:var(--at);font-weight:600;font-size:12px;display:flex;align-items:center;justify-content:center;border:1px solid #B7DEC9;flex-shrink:0}
+.user-name{font-size:13px;font-weight:500;color:var(--t2);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn-signout{padding:6px 12px;border:1px solid var(--bd);border-radius:var(--r);background:none;font-family:'DM Sans',sans-serif;font-size:12.5px;color:var(--t2);cursor:pointer;transition:all 0.15s;flex-shrink:0}
+.btn-signout:hover{background:var(--s2)}
+/* TABS */
+.tabbar{background:var(--sf);border-bottom:1px solid var(--bd);display:flex;padding:0 20px;position:sticky;top:54px;z-index:99;overflow-x:auto}
+.tab{padding:13px 16px;font-size:13.5px;font-weight:500;color:var(--t2);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;font-family:'DM Sans',sans-serif;transition:all 0.15s;white-space:nowrap}
+.tab:hover{color:var(--tx)}.tab.active{color:var(--ac);border-bottom-color:var(--ac)}
+/* CONTENT */
+.wrap{max-width:700px;margin:0 auto;padding:32px 20px 60px}
+.view{display:none}.view.active{display:block}
+.ph{margin-bottom:22px}
+.ph h1{font-family:'DM Serif Display',serif;font-size:22px;font-weight:400;letter-spacing:-0.3px;margin-bottom:4px}
+.ph p{color:var(--t2);font-size:13.5px;line-height:1.6}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);padding:22px;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
+/* FORM */
+.fg{margin-bottom:15px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{display:block;font-size:12.5px;font-weight:500;color:var(--t2);margin-bottom:5px}
+input,select,textarea{width:100%;padding:9px 11px;border:1px solid var(--bd);border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:14px;color:var(--tx);background:var(--sf);outline:none;transition:border 0.15s,box-shadow 0.15s;-webkit-appearance:none;appearance:none}
+input:focus,select:focus,textarea:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(45,106,79,0.1)}
+input[readonly]{background:var(--s2);color:var(--t2)}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239E9891' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;cursor:pointer}
+textarea{resize:vertical;min-height:75px;line-height:1.5}
+hr.sep{border:none;border-top:1px solid var(--bd);margin:16px 0}
+.err-msg{font-size:12px;color:var(--dn);margin-top:4px;display:none}
+.field-err input,.field-err select{border-color:var(--dn)}
+.field-err .err-msg{display:block}
+/* TAGS */
+.days-tag{display:none;margin-top:8px;border-radius:var(--r);padding:9px 13px;font-size:13px;font-weight:500;background:var(--al);border:1px solid #B7DEC9;color:var(--at)}
+.conflict-banner{display:none;background:#FFF7ED;border:1px solid #FED7AA;border-radius:var(--r);padding:10px 14px;font-size:13px;color:#9A3412;margin-top:8px;line-height:1.5}
+.balance-warn{display:none;border-radius:var(--r);padding:10px 14px;font-size:13px;margin-top:8px;background:var(--dl);border:1px solid #F5B7B1;color:var(--dt);font-weight:500}
+.success-inline{display:none;background:var(--al);border:1px solid #B7DEC9;border-radius:var(--r);padding:14px 18px;font-size:14px;color:var(--at);font-weight:500;margin-top:16px;text-align:center}
+/* BUTTONS */
+.btn-p{display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 20px;background:var(--ac);color:#fff;border:none;border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:background 0.15s,opacity 0.15s;width:100%;margin-top:16px}
+.btn-p:hover{background:#236040}.btn-p:disabled{opacity:0.55;cursor:not-allowed}
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* BALANCE */
+.balance-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:22px}
+.bal-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);padding:13px 15px;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
+.bal-type{font-size:11px;color:var(--t2);margin-bottom:4px;font-weight:500;text-transform:uppercase;letter-spacing:0.3px}
+.bal-nums{display:flex;align-items:baseline;gap:4px}
+.bal-big{font-family:'DM Serif Display',serif;font-size:26px;color:var(--tx)}
+.bal-of{font-size:12px;color:var(--t3)}
+.bal-bar{height:4px;background:var(--bd);border-radius:2px;margin-top:8px;overflow:hidden}
+.bal-fill{height:100%;border-radius:2px;background:var(--ac);transition:width 0.4s}
+.bal-fill.warn{background:var(--wn)}.bal-fill.danger{background:var(--dn)}
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
+.tbl th{background:var(--s2);font-size:12px;font-weight:600;color:var(--t2);padding:10px 14px;text-align:left;border-bottom:1px solid var(--bd)}
+.tbl td{font-size:13px;padding:11px 14px;border-bottom:1px solid var(--bd);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr.req-row{cursor:pointer;transition:background 0.1s}
+.tbl tr.req-row:hover td{background:#F5F9F7}
+.tbl tr.req-row.expanded td{background:#F5F9F7;font-weight:500}
+.tbl tr.detail-row td{background:#FAFAF8;padding:0}
+.tbl tr.detail-row.hidden{display:none}
+.req-detail{padding:14px 18px;font-size:13px;line-height:1.7;border-top:1px dashed var(--bd)}
+.req-detail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 24px}
+.req-detail-item{}
+.req-detail-label{font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:2px}
+.req-detail-value{font-size:13.5px;color:var(--tx)}
+.req-chevron{font-size:11px;color:var(--t3);transition:transform 0.2s;display:inline-block;margin-left:4px}
+.req-row.expanded .req-chevron{transform:rotate(180deg)}
+.badge{font-size:11px;font-weight:500;padding:3px 9px;border-radius:40px;border:1px solid;white-space:nowrap}
+.badge-pending{background:var(--wl);color:var(--wt);border-color:#EDD69A}
+.badge-approved{background:var(--al);color:var(--at);border-color:#B7DEC9}
+.badge-rejected{background:var(--dl);color:var(--dt);border-color:#F5B7B1}
+/* CALENDAR */
+.cal-outer{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
+.cal-head{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--bd)}
+.cal-head h2{font-family:'DM Serif Display',serif;font-size:17px;font-weight:400}
+.cal-nb{background:none;border:1px solid var(--bd);border-radius:var(--r);width:30px;height:30px;cursor:pointer;font-size:18px;color:var(--t2);display:flex;align-items:center;justify-content:center;transition:all 0.12s}
+.cal-nb:hover{background:var(--s2)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr)}
+.cal-dn{text-align:center;font-size:11px;font-weight:600;color:var(--t3);padding:8px 2px;border-bottom:1px solid var(--bd)}
+.cal-cell{min-height:76px;padding:5px 6px;border-right:1px solid var(--bd);border-bottom:1px solid var(--bd);cursor:pointer;transition:background 0.1s}
+.cal-cell:hover{background:#F8F6F2}.cal-cell:nth-child(7n){border-right:none}
+.cal-dt{font-size:12px;font-weight:500;margin-bottom:3px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.cal-cell.today .cal-dt{background:var(--ac);color:#fff;font-weight:600}
+.cal-cell.other-m .cal-dt{color:var(--t3)}
+.ev{font-size:10.5px;font-weight:500;padding:2px 5px;border-radius:3px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4}
+.ev.approved{background:var(--al);color:var(--at)}.ev.pending{background:var(--wl);color:var(--wt)}
+.ev.medical{background:#EFF6FF;color:#1E40AF}.ev.emergency{background:#FFF1F2;color:#BE123C}
+.ev.event{background:#EEF2FF;color:#3730A3}
+.cal-more{font-size:10px;color:var(--t3);padding:0 3px}
+.cal-footer{display:flex;align-items:center;gap:14px;padding:10px 16px;border-top:1px solid var(--bd);flex-wrap:wrap}
+.leg{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--t2)}
+.dot{width:8px;height:8px;border-radius:50%}
+.dot.approved{background:var(--ac)}.dot.pending{background:var(--wn)}.dot.event{background:#4F46E5}
+/* EMPTY/LOADING */
+.empty{text-align:center;padding:40px;color:var(--t3);font-size:14px;background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl)}
+.loading{text-align:center;padding:36px;color:var(--t3);font-size:14px}
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:500;align-items:center;justify-content:center;padding:20px}
+.modal-bg.open{display:flex}
+.modal{background:var(--sf);border-radius:var(--rl);padding:22px;width:100%;max-width:420px;border:1px solid var(--bd);box-shadow:0 8px 30px rgba(0,0,0,0.15)}
+.modal h3{font-family:'DM Serif Display',serif;font-size:18px;font-weight:400;margin-bottom:14px}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:14px;border-top:1px solid var(--bd)}
+.btn-mclose{padding:8px 16px;border:1px solid var(--bd);border-radius:var(--r);background:var(--sf);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;color:var(--t2)}
+.btn-mclose:hover{background:var(--s2)}
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--tx);color:#fff;padding:11px 22px;border-radius:40px;font-size:13px;font-weight:500;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);z-index:999;white-space:nowrap;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+/* LOADING SCREEN */
+#loading-screen{position:fixed;inset:0;background:var(--sf);display:flex;align-items:center;justify-content:center;z-index:9999;font-family:'DM Serif Display',serif;font-size:22px;color:var(--t2)}
+@media(max-width:480px){.form-row,.balance-row{grid-template-columns:1fr 1fr}.wrap{padding:20px 14px 50px}.tab{padding:10px 10px;font-size:12.5px}.cal-cell{min-height:44px}.ev{display:none}}
+</style>
 </head>
 <body>
-    <div id="verify-banner" style="display:none; background:#FFF7ED; padding:20px; text-align:center;">
-        <h2>Please verify your email</h2>
-        <p>Check your inbox and click the link to unlock your dashboard.</p>
-        <button onclick="location.reload()">I've verified, let me in</button>
-    </div>
-    <div id="app-content">
-        <!-- Main Dashboard -->
-    </div>
 
-    <script src="config.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script>
-        firebase.initializeApp(FIREBASE_CONFIG);
-        firebase.auth().onAuthStateChanged(user => {
-            if (!user) { location.href = 'auth.html'; return; }
-            if (!user.emailVerified) {
-                document.getElementById('app-content').style.display = 'none';
-                document.getElementById('verify-banner').style.display = 'block';
-            }
-        });
+<div id="loading-screen">Loading...</div>
+<div id="verify-banner" style="display:none;background:#FFF7ED;border-bottom:1px solid #FED7AA;padding:10px 20px;font-size:13.5px;color:#9A3412;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+  <span>📧 <strong>Please verify your email</strong> — check your inbox for a verification link to unlock all features.</span>
+  <button onclick="resendVerifyEmp()" style="background:none;border:1px solid #FED7AA;border-radius:8px;padding:5px 12px;font-family:DM Sans,sans-serif;font-size:12.5px;color:#9A3412;cursor:pointer;white-space:nowrap">Resend email</button>
+</div>
 
-        function doSignOut() {
-            firebase.auth().signOut().then(() => location.href = 'index.html');
-        }
-    </script>
+<nav>
+  <div class="logo" onclick="location.href='index.html'">Leave<b>Desk</b></div>
+  <div class="user-info">
+    <div class="user-avatar" id="user-avatar">?</div>
+    <span class="user-name" id="user-name-nav">Loading...</span>
+    <button class="btn-signout" onclick="doSignOut()">Sign out</button>
+  </div>
+</nav>
+
+<div class="tabbar" id="tabbar">
+  <button class="tab active" onclick="goTab('request',this)">📝 Request leave</button>
+  <button class="tab" onclick="goTab('status',this)">✅ My approvals</button>
+  <button class="tab" onclick="goTab('cal',this)">📅 Calendar</button>
+</div>
+
+<div class="wrap">
+
+  <!-- REQUEST LEAVE -->
+  <div class="view active" id="v-request">
+    <div class="ph"><h1>Request time off</h1><p>Submit a leave request. Your manager will review it.</p></div>
+    <div class="card">
+      <div class="fg">
+        <label>Your name</label>
+        <input type="text" id="emp-name" readonly>
+      </div>
+      <div class="fg" id="fg-type">
+        <label>Leave type</label>
+        <select id="leave-type" onchange="onTypeChange()">
+          <option value="">Select leave type...</option>
+          <option value="Annual leave">🏖️ Annual leave</option>
+          <option value="Medical leave">🤒 Medical leave</option>
+          <option value="Emergency leave">🚨 Emergency leave</option>
+          <option value="Unpaid leave">💼 Unpaid leave</option>
+          <option value="Other">📋 Other</option>
+        </select>
+        <div class="err-msg">Please select a leave type.</div>
+      </div>
+      <div class="balance-warn" id="balance-warn"></div>
+      <hr class="sep">
+      <div class="form-row">
+        <div class="fg" id="fg-start">
+          <label>Start date</label>
+          <input type="date" id="start-date" onchange="onDateChange()">
+          <div class="err-msg">Required.</div>
+        </div>
+        <div class="fg" id="fg-end">
+          <label>End date</label>
+          <input type="date" id="end-date" onchange="onDateChange()">
+          <div class="err-msg">Required.</div>
+        </div>
+      </div>
+      <div class="days-tag" id="days-tag"></div>
+      <div class="conflict-banner" id="conflict-banner"></div>
+      <div class="fg" style="margin-top:14px">
+        <label>Reason <span style="color:var(--t3);font-weight:400">(optional)</span></label>
+        <textarea id="reason" placeholder="Brief reason..."></textarea>
+      </div>
+      <button class="btn-p" id="submit-btn" onclick="submitRequest()">Submit leave request</button>
+      <div class="success-inline" id="success-inline">✅ Leave request submitted!</div>
+    </div>
+  </div>
+
+  <!-- MY APPROVALS -->
+  <div class="view" id="v-status">
+    <div class="ph"><h1>My approvals</h1><p>Your leave history and remaining balance.</p></div>
+    <div id="my-balance"></div>
+    <div id="my-list"><div class="loading">Loading your requests...</div></div>
+  </div>
+
+  <!-- CALENDAR -->
+  <div class="view" id="v-cal">
+    <div class="ph"><h1>Leave calendar</h1><p>Click any date to see who's off.</p></div>
+    <div class="cal-outer">
+      <div class="cal-head">
+        <button class="cal-nb" onclick="changeMonth(-1)">&#8249;</button>
+        <h2 id="cal-title"></h2>
+        <button class="cal-nb" onclick="changeMonth(1)">&#8250;</button>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div class="cal-footer">
+        <div class="leg"><div class="dot approved"></div>Approved</div>
+        <div class="leg"><div class="dot pending"></div>Pending</div>
+        <div class="leg"><div class="dot event"></div>Event</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<!-- DAY DETAIL MODAL -->
+<div class="modal-bg" id="modal-day">
+  <div class="modal">
+    <h3 id="day-title"></h3>
+    <div id="day-body"></div>
+    <div class="modal-footer"><button class="btn-mclose" onclick="closeModal()">Close</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+firebase.initializeApp(FIREBASE_CONFIG);
+var auth=firebase.auth(), db=firebase.database();
+
+/* Init EmailJS if enabled — wait for SDK to load */
+function initEmailJS(){
+  if(typeof EMAILJS_ENABLED==='undefined'||!EMAILJS_ENABLED)return;
+  if(typeof emailjs==='undefined'){
+    setTimeout(initEmailJS,500); /* retry if SDK not ready */
+    return;
+  }
+  try{
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+    console.log('EmailJS initialised');
+  }catch(e){console.error('EmailJS init failed:',e);}
+}
+initEmailJS();
+var currentUser=null, allRequests=[], calEvents=[], calMap={};
+var cal={y:new Date().getFullYear(),m:new Date().getMonth()};
+
+/* AUTH GUARD */
+auth.onAuthStateChanged(function(user){
+  if(!user){location.href='auth.html';return;}
+  if(!user.emailVerified){
+    currentUser=user;
+    document.getElementById('loading-screen').style.display='none';
+    document.getElementById('verify-banner').style.display='flex';
+    /* Still set name/avatar so page isn't blank */
+    var n=user.displayName||user.email.split('@')[0];
+    document.getElementById('emp-name').value=n;
+    var ini=n.split(' ').map(function(x){return x[0];}).join('').slice(0,2).toUpperCase();
+    document.getElementById('user-avatar').textContent=ini;
+    document.getElementById('user-name-nav').textContent=n;
+    return; /* stop here — don't load app until verified */
+  }
+  currentUser=user;
+  var name=user.displayName||user.email.split('@')[0];
+  document.getElementById('emp-name').value=name;
+  var ini=name.split(' ').map(function(n){return n[0];}).join('').slice(0,2).toUpperCase();
+  document.getElementById('user-avatar').textContent=ini;
+  document.getElementById('user-name-nav').textContent=name;
+  document.getElementById('loading-screen').style.display='none';
+  var today=new Date().toISOString().slice(0,10);
+  document.getElementById('start-date').min=today;
+  document.getElementById('end-date').min=today;
+  renderCal();
+  /* Ensure user profile exists in /users/ for manager staff list */
+  ensureUserProfile(user);
+});
+
+function ensureUserProfile(user){
+  var name=user.displayName||user.email.split('@')[0];
+  var ref='https://leavedesk2-default-rtdb.asia-southeast1.firebasedatabase.app/users/'+user.uid+'.json';
+  fetch(ref).then(function(r){return r.json();}).then(function(d){
+    if(!d){
+      /* Profile missing — write it now */
+      fetch(ref,{method:'PUT',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({name:name,email:user.email,uid:user.uid,joined:Date.now()})
+      });
+    }
+  }).catch(function(){});
+}
+
+function doSignOut(){auth.signOut().then(function(){location.href='index.html';});}
+
+async function resendVerifyEmp(){
+  if(!currentUser)return;
+  try{
+    await currentUser.sendEmailVerification();
+    alert('Verification email sent! Check your inbox.');
+  }catch(e){
+    alert('Could not resend. Wait a few minutes and try again.');
+  }
+}
+
+/* TABS */
+function goTab(id,btn){
+  document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('active');});
+  document.querySelectorAll('.view').forEach(function(v){v.style.display='none';v.classList.remove('active');});
+  if(btn)btn.classList.add('active');
+  var v=document.getElementById('v-'+id);v.style.display='block';v.classList.add('active');
+  window.scrollTo(0,0);
+  if(id==='status')loadMyRequests();
+  if(id==='cal')loadAndRenderCal();
+}
+
+/* DB */
+var DB='';
+async function getDB(p){try{var r=await fetch('https://leavedesk2-default-rtdb.asia-southeast1.firebasedatabase.app'+p+'.json');return await r.json();}catch(e){return null;}}
+async function postDB(p,d){try{var r=await fetch('https://leavedesk2-default-rtdb.asia-southeast1.firebasedatabase.app'+p+'.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});return r.ok;}catch(e){return false;}}
+
+async function loadAllRequests(){
+  var d=await getDB('/requests');if(!d)return[];
+  return Object.entries(d).map(function(e){return Object.assign({},e[1],{_key:e[0]});}).sort(function(a,b){return b.timestamp-a.timestamp;});
+}
+async function loadArchive(){
+  var d=await getDB('/archive');if(!d)return[];
+  return Object.entries(d).map(function(e){return Object.assign({},e[1],{_key:e[0]});});
+}
+
+function workingDays(s,e){
+  var a=new Date(s+'T00:00:00'),b=new Date(e+'T00:00:00'),c=0;
+  while(a<=b){var d=a.getDay();if(d!==0&&d!==6)c++;a.setDate(a.getDate()+1);}return c;
+}
+
+async function getUsed(name,type){
+  var active=await loadAllRequests();
+  var arch=await loadArchive();
+  return active.concat(arch).filter(function(r){return r.name.toLowerCase()===name.toLowerCase()&&r.type===type&&r.status==='Approved';}).reduce(function(s,r){return s+(r.days||0);},0);
+}
+
+/* TYPE CHANGE */
+async function onTypeChange(){
+  var type=document.getElementById('leave-type').value;
+  var warn=document.getElementById('balance-warn');
+  warn.style.display='none';
+  if(!type||!currentUser||type==='Unpaid leave')return;
+  var name=currentUser.displayName||currentUser.email.split('@')[0];
+  var ent=ENTITLEMENTS[type]||4;
+  var used=await getUsed(name,type);
+  var rem=ent-used;
+  if(rem<=0){warn.style.display='block';warn.textContent='⚠️ No '+type+' days remaining (0 of '+ent+' left). Request will be blocked.';}
+  else if(rem===1){warn.style.display='block';warn.style.cssText='display:block;background:#FEFCE8;border:1px solid #EDD69A;border-radius:10px;padding:10px 14px;font-size:13px;color:#7D5A0A;margin-top:8px';warn.textContent='⚠️ Only 1 day of '+type+' remaining.';}
+}
+
+async function onDateChange(){
+  var s=document.getElementById('start-date').value,e=document.getElementById('end-date').value;
+  var ei=document.getElementById('end-date');
+  if(s){ei.min=s;if(ei.value&&ei.value<s)ei.value=s;}
+  var tag=document.getElementById('days-tag'),banner=document.getElementById('conflict-banner');
+  banner.style.display='none';
+  if(!s||!e){tag.style.display='none';return;}
+  var wd=workingDays(s,e);
+  if(wd<1){tag.style.display='none';return;}
+  tag.style.display='block';tag.textContent='📅 '+wd+' working day'+(wd>1?'s':'')+' requested';
+  var all=await loadAllRequests();
+  var cf=all.filter(function(r){return r.status==='Approved'&&!(r.end<s||r.start>e);});
+  if(cf.length){var ns=[...new Set(cf.map(function(r){return r.name.split(' ')[0];}))];banner.style.display='block';banner.innerHTML='⚠️ <strong>'+ns.join(', ')+'</strong> '+(ns.length>1?'are':'is')+' already on leave during these dates.';}
+}
+
+function clrErr(){document.querySelectorAll('.field-err').forEach(function(el){el.classList.remove('field-err');});}
+function setErr(id,msg){var fg=document.getElementById(id);fg.classList.add('field-err');if(msg)fg.querySelector('.err-msg').textContent=msg;}
+
+async function submitRequest(){
+  clrErr();document.getElementById('success-inline').style.display='none';
+  if(!currentUser)return;
+  var name=currentUser.displayName||currentUser.email.split('@')[0];
+  var type=document.getElementById('leave-type').value;
+  var start=document.getElementById('start-date').value;
+  var end=document.getElementById('end-date').value;
+  var reason=document.getElementById('reason').value.trim();
+  var ok=true;
+  if(!type){setErr('fg-type');ok=false;}
+  if(!start){setErr('fg-start','Required.');ok=false;}
+  if(!end){setErr('fg-end','Required.');ok=false;}
+  if(!ok)return;
+  if(end<start){setErr('fg-end','End date must be after start date.');return;}
+  var days=workingDays(start,end);
+  if(type!=='Unpaid leave'){
+    var ent=ENTITLEMENTS[type]||4;
+    var used=await getUsed(name,type);
+    if(used+days>ent&&used>=ent){showToast('❌ No '+type+' days remaining. Request blocked.');return;}
+  }
+  var btn=document.getElementById('submit-btn');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Submitting...';
+  var ok2=await postDB('/requests',{name:name,uid:currentUser.uid,type:type,start:start,end:end,days:days,reason:reason,status:'Pending',rejectReason:'',timestamp:Date.now(),submitted:new Date().toLocaleDateString('en-SG',{day:'2-digit',month:'short',year:'numeric'})});
+  btn.disabled=false;btn.innerHTML='Submit leave request';
+  if(ok2){
+    ['start-date','end-date','reason'].forEach(function(i){document.getElementById(i).value='';});
+    document.getElementById('leave-type').value='';
+    document.getElementById('days-tag').style.display='none';
+    document.getElementById('conflict-banner').style.display='none';
+    document.getElementById('balance-warn').style.display='none';
+    document.getElementById('success-inline').style.display='block';
+    setTimeout(function(){document.getElementById('success-inline').style.display='none';},5000);
+  } else showToast('Failed — check database connection.');
+}
+
+/* MY APPROVALS */
+function toggleDetail(idx,row){
+  var detail=document.getElementById('detail-'+idx);
+  if(!detail)return;
+  var hidden=detail.classList.contains('hidden');
+  detail.classList.toggle('hidden',!hidden);
+  row.classList.toggle('expanded',hidden);
+}
+
+async function cancelRequest(key){
+  if(!confirm('Cancel this leave request? This cannot be undone.'))return;
+  try{
+    var r=await fetch('https://leavedesk2-default-rtdb.asia-southeast1.firebasedatabase.app/requests/'+key+'.json',{method:'DELETE'});
+    if(r.ok){showToast('Leave request cancelled.');loadMyRequests();}
+    else showToast('Could not cancel. Try again.');
+  }catch(e){showToast('Network error.');}
+}
+
+async function loadMyRequests(){
+  if(!currentUser)return;
+  var bal=document.getElementById('my-balance'),list=document.getElementById('my-list');
+  list.innerHTML='<div class="loading">Loading your requests...</div>';
+  var name=currentUser.displayName||currentUser.email.split('@')[0];
+  var active=await loadAllRequests();
+  var arch=await loadArchive();
+  var all=active.concat(arch).filter(function(r){return r.uid===currentUser.uid||r.name.toLowerCase()===name.toLowerCase();}).sort(function(a,b){return b.timestamp-a.timestamp;});
+  /* balance cards */
+  var usedByType={};
+  all.filter(function(r){return r.status==='Approved';}).forEach(function(r){usedByType[r.type]=(usedByType[r.type]||0)+(r.days||0);});
+  var bh='<div class="balance-row">';
+  ['Annual leave','Medical leave','Emergency leave'].forEach(function(t){
+    var used=usedByType[t]||0,total=ENTITLEMENTS[t]||4,rem=Math.max(0,total-used);
+    var pct=Math.min(100,Math.round((used/total)*100));
+    var fc=pct>=100?'danger':pct>75?'warn':'';
+    bh+='<div class="bal-card"><div class="bal-type">'+t.replace(' leave','')+'</div><div class="bal-nums"><span class="bal-big">'+rem+'</span><span class="bal-of">/ '+total+'d</span></div><div class="bal-bar"><div class="bal-fill '+fc+'" style="width:'+pct+'%"></div></div></div>';
+  });
+  bh+='</div>';bal.innerHTML=bh;
+  if(!all.length){list.innerHTML='<div class="empty">No leave requests yet. Submit one on the "Request leave" tab.</div>';return;}
+  var tbl='<table class="tbl"><thead><tr><th>Type</th><th>Dates</th><th>Days</th><th>Status</th></tr></thead><tbody>';
+  tbl+=all.map(function(r,idx){
+    var ds=fmtD(r.start)+(r.start!==r.end?' – '+fmtD(r.end):'');
+    var cancelBtn=(!r._archived&&r.status==='Pending')
+      ?'<button onclick="event.stopPropagation();cancelRequest(''+r._key+'')" style="padding:4px 10px;border:1px solid #F5B7B1;border-radius:6px;background:#FDECEA;color:#7B241C;font-family:DM Sans,sans-serif;font-size:11px;cursor:pointer;white-space:nowrap;margin-top:8px;display:inline-block">Cancel request</button>':'';
+    var reasonHtml=r.reason?'<div class="req-detail-item"><div class="req-detail-label">Reason given</div><div class="req-detail-value">'+esc(r.reason)+'</div></div>':'';
+    var rejectHtml=r.rejectReason?'<div class="req-detail-item" style="grid-column:1/-1"><div class="req-detail-label">Rejection reason</div><div class="req-detail-value" style="color:var(--dt)">'+esc(r.rejectReason)+'</div></div>':'';
+    var detail='<tr class="detail-row hidden" id="detail-'+idx+'"><td colspan="4">'+
+      '<div class="req-detail">'+
+        '<div class="req-detail-grid">'+
+          '<div class="req-detail-item"><div class="req-detail-label">Leave type</div><div class="req-detail-value">'+esc(r.type)+'</div></div>'+
+          '<div class="req-detail-item"><div class="req-detail-label">Dates</div><div class="req-detail-value">'+ds+'</div></div>'+
+          '<div class="req-detail-item"><div class="req-detail-label">Working days</div><div class="req-detail-value">'+r.days+' day'+(r.days>1?'s':'')+'</div></div>'+
+          '<div class="req-detail-item"><div class="req-detail-label">Submitted</div><div class="req-detail-value">'+r.submitted+'</div></div>'+
+          reasonHtml+rejectHtml+
+        '</div>'+
+        cancelBtn+
+      '</div>'+
+    '</td></tr>';
+    return '<tr class="req-row" onclick="toggleDetail('+idx+',this)">'+
+      '<td>'+esc(r.type)+'<span class="req-chevron">▼</span></td>'+
+      '<td style="white-space:nowrap;font-size:12.5px">'+ds+'</td>'+
+      '<td>'+r.days+'</td>'+
+      '<td><span class="badge badge-'+r.status.toLowerCase()+'">'+r.status+'</span></td>'+
+    '</tr>'+detail;
+  }).join('');
+  list.innerHTML=tbl+'</tbody></table>';
+}
+
+/* CALENDAR */
+async function loadAndRenderCal(){
+  document.getElementById('cal-grid').innerHTML='<div style="grid-column:1/-1;padding:28px;text-align:center;color:var(--t3);font-size:13px">Loading...</div>';
+  allRequests=await loadAllRequests();
+  var ed=await getDB('/events');
+  calEvents=ed?Object.entries(ed).map(function(e){return Object.assign({},e[1],{_key:e[0]});}):[];
+  renderCal();
+}
+
+function changeMonth(dir){cal.m+=dir;if(cal.m>11){cal.m=0;cal.y++;}if(cal.m<0){cal.m=11;cal.y--;}renderCal();}
+
+function leaveClass(type,status){
+  if(status==='pending')return'pending';
+  var t=(type||'').toLowerCase();
+  if(t.indexOf('medical')>-1)return'medical';
+  if(t.indexOf('emergency')>-1)return'emergency';
+  return'approved';
+}
+
+function renderCal(){
+  var y=cal.y,m=cal.m;
+  var MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('cal-title').textContent=MN[m]+' '+y;
+  calMap={};
+  allRequests.filter(function(r){return r.status!=='Rejected';}).forEach(function(r){
+    var cur=new Date(r.start+'T00:00:00'),ed=new Date(r.end+'T00:00:00');
+    while(cur<=ed){var k=cur.toISOString().slice(0,10);if(!calMap[k])calMap[k]=[];calMap[k].push({lbl:r.name.split(' ')[0],cls:leaveClass(r.type,r.status.toLowerCase()),name:r.name,status:r.status,reason:r.reason,type:r.type,isLeave:true});cur.setDate(cur.getDate()+1);}
+  });
+  calEvents.forEach(function(ev){
+    var cur=new Date(ev.start+'T00:00:00'),ed=new Date((ev.end||ev.start)+'T00:00:00');
+    while(cur<=ed){var k=cur.toISOString().slice(0,10);if(!calMap[k])calMap[k]=[];calMap[k].push({lbl:ev.title,cls:'event',isLeave:false,title:ev.title,ts:ev.ts,te:ev.te,notes:ev.notes});cur.setDate(cur.getDate()+1);}
+  });
+  var map=calMap;
+  var first=new Date(y,m,1).getDay(),dim=new Date(y,m+1,0).getDate(),prev=new Date(y,m,0).getDate();
+  var today=new Date().toISOString().slice(0,10);
+  var DN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var html=DN.map(function(d){return '<div class="cal-dn">'+d+'</div>';}).join('');
+  for(var i=first-1;i>=0;i--)html+='<div class="cal-cell other-m"><div class="cal-dt">'+(prev-i)+'</div></div>';
+  for(var d=1;d<=dim;d++){
+    var ds=y+'-'+(m+1<10?'0':'')+(m+1)+'-'+(d<10?'0':'')+d;
+    var evs=map[ds]||[];
+    var cls='cal-cell'+(ds===today?' today':'');
+    var evh=evs.slice(0,3).map(function(e){return '<div class="ev '+e.cls+'">'+esc(e.lbl)+'</div>';}).join('');
+    if(evs.length>3)evh+='<div class="cal-more">+'+(evs.length-3)+' more</div>';
+    html+='<div class="'+cls+'"'+(evs.length?' onclick="showDay(\''+ds+'\')"':'')+'>'+
+      '<div class="cal-dt">'+d+'</div>'+evh+'</div>';
+  }
+  var tot=first+dim,rem2=tot%7===0?0:7-(tot%7);
+  for(var k=1;k<=rem2;k++)html+='<div class="cal-cell other-m"><div class="cal-dt">'+k+'</div></div>';
+  document.getElementById('cal-grid').innerHTML=html;
+}
+
+function showDay(ds){
+  var MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var dt=new Date(ds+'T00:00:00');
+  document.getElementById('day-title').textContent=dt.getDate()+' '+MN[dt.getMonth()]+' '+dt.getFullYear();
+  /* Use calMap directly — same data used to render the calendar, guaranteed accurate */
+  var items=calMap[ds]||[];
+  var dc={'Approved':'var(--ac)','Pending':'var(--wn)','Rejected':'var(--dn)'};
+  document.getElementById('day-body').innerHTML=items.length?items.map(function(item){
+    if(item.isLeave){
+      var col=dc[item.status]||'var(--ac)';
+      return '<div style="padding:10px 0;border-bottom:1px solid var(--bd)">'+
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'+
+          '<div style="width:8px;height:8px;border-radius:50%;background:'+col+';flex-shrink:0"></div>'+
+          '<strong style="font-size:14px">'+esc(item.name)+'</strong>'+
+          '<span class="badge badge-'+item.status.toLowerCase()+'">'+item.status+'</span>'+
+        '</div>'+
+        '<div style="font-size:13px;color:var(--t2);margin-left:16px">'+esc(item.type)+'</div>'+
+        (item.reason?'<div style="font-size:12px;color:var(--t3);margin-left:16px;font-style:italic;margin-top:2px">"'+esc(item.reason)+'"</div>':'')+
+      '</div>';
+    } else {
+      return '<div style="padding:10px 0;border-bottom:1px solid var(--bd)">'+
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'+
+          '<div style="width:8px;height:8px;border-radius:50%;background:#4F46E5;flex-shrink:0"></div>'+
+          '<strong style="font-size:14px">📌 '+esc(item.title)+'</strong>'+
+        '</div>'+
+        (item.ts?'<div style="font-size:13px;color:var(--t2);margin-left:16px">'+item.ts+(item.te?' – '+item.te:'')+'</div>':'')+
+        (item.notes?'<div style="font-size:12px;color:var(--t3);margin-left:16px;margin-top:2px">'+esc(item.notes)+'</div>':'')+
+      '</div>';
+    }
+  }).join(''):'<p style="color:var(--t3);font-size:14px;text-align:center;padding:12px 0">No leave or events on this date.</p>';
+  document.getElementById('modal-day').classList.add('open');
+}
+function closeModal(){document.getElementById('modal-day').classList.remove('open');}
+document.getElementById('modal-day').addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
+
+/* Email notification to manager */
+function sendManagerNotification(data){
+  if(typeof EMAILJS_ENABLED==='undefined'||!EMAILJS_ENABLED){
+    console.log('EmailJS: disabled in config.js');return;
+  }
+  if(typeof emailjs==='undefined'){
+    console.error('EmailJS SDK not loaded — check internet connection');return;
+  }
+  if(!EMAILJS_SERVICE_ID||EMAILJS_SERVICE_ID==='YOUR_SERVICE_ID'){
+    console.error('EmailJS: SERVICE_ID not set in config.js');return;
+  }
+  if(!EMAILJS_TEMPLATE_ID||EMAILJS_TEMPLATE_ID==='YOUR_TEMPLATE_ID'){
+    console.error('EmailJS: TEMPLATE_ID not set in config.js');return;
+  }
+  if(!MANAGER_EMAIL_TO||MANAGER_EMAIL_TO==='YOUR_MANAGER_EMAIL@gmail.com'){
+    console.error('EmailJS: MANAGER_EMAIL_TO not set in config.js');return;
+  }
+  var params={
+    to_email:   MANAGER_EMAIL_TO,
+    to_name:    'Manager',
+    from_name:  data.name,
+    leave_type: data.type,
+    start_date: fmtD(data.start),
+    end_date:   fmtD(data.end),
+    days:       String(data.days),
+    reason:     data.reason||'(none)',
+    reply_to:   MANAGER_EMAIL_TO,
+    message:    data.name+' submitted a '+data.type+' request from '+fmtD(data.start)+' to '+fmtD(data.end)+' ('+data.days+' working day'+(data.days>1?'s':'')+')'+(data.reason?'. Reason: '+data.reason:'')+'.'
+  };
+  console.log('EmailJS: sending to',MANAGER_EMAIL_TO,'via service',EMAILJS_SERVICE_ID,'template',EMAILJS_TEMPLATE_ID);
+  emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, params)
+    .then(function(res){
+      console.log('EmailJS: sent successfully',res.status,res.text);
+      showToast('✉️ Manager notified by email');
+    })
+    .catch(function(err){
+      console.error('EmailJS error:',JSON.stringify(err));
+      /* Show user-visible error for debugging */
+      showToast('Note: email notification failed ('+( err.text||err.status||'unknown')+')');
+    });
+}
+
+function fmtD(d){if(!d)return'';return new Date(d+'T00:00:00').toLocaleDateString('en-SG',{day:'2-digit',month:'short',year:'numeric'});}
+function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2800);}
+renderCal();
+</script>
 </body>
 </html>
