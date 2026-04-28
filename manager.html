@@ -77,6 +77,14 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
 /* REQUEST CARDS */
 .rc{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);padding:15px 18px;margin-bottom:9px;transition:border-color 0.13s;box-shadow:0 1px 3px rgba(0,0,0,0.03);position:relative}
 .rc:hover{border-color:var(--bd2)}.rc.sel{border-color:#B7DEC9;background:#F7FDF9}
+.rc-expand-btn{background:none;border:none;font-size:12px;color:var(--t3);cursor:pointer;padding:0;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:3px;transition:color 0.15s;white-space:nowrap}
+.rc-expand-btn:hover{color:var(--ac)}
+.rc-chevron{display:inline-block;transition:transform 0.2s;font-size:10px}
+.rc-detail{display:none;margin-top:12px;padding-top:12px;border-top:1px dashed var(--bd);font-size:13px}
+.rc-detail.open{display:block}
+.rc-detail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 24px;margin-bottom:8px}
+.rc-detail-item .rc-detail-label{font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:2px}
+.rc-detail-item .rc-detail-value{font-size:13.5px;color:var(--tx)}
 .rc-chk{display:none;position:absolute;top:18px;left:16px;width:16px;height:16px;cursor:pointer;accent-color:var(--ac)}
 .rc.selectable .rc-chk{display:block}.rc.selectable .rc-top{padding-left:26px}
 .rc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
@@ -126,19 +134,19 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
 .ev-note{font-size:12px;color:var(--t3);font-style:italic;margin-top:3px}
 .ev-badge{font-size:11px;background:#EEF2FF;color:#3730A3;border:1px solid #C7D2FE;padding:2px 8px;border-radius:40px;white-space:nowrap;flex-shrink:0}
 /* STAFF CARDS */
-.staff-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);padding:18px 20px;margin-bottom:10px;display:flex;align-items:flex-start;gap:14px;box-shadow:0 1px 3px rgba(0,0,0,0.03);transition:all 0.13s}
-.staff-card:hover{border-color:var(--bd2);box-shadow:0 2px 8px rgba(0,0,0,0.07)}
-.staff-av{width:42px;height:42px;border-radius:50%;background:var(--al);color:var(--at);font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid #B7DEC9}
+.staff-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);padding:16px 18px;margin-bottom:10px;display:flex;align-items:center;gap:14px;box-shadow:0 1px 3px rgba(0,0,0,0.03);transition:border-color 0.13s}
+.staff-card:hover{border-color:var(--bd2)}
+.staff-av{width:40px;height:40px;border-radius:50%;background:var(--al);color:var(--at);font-weight:600;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid #B7DEC9}
 .staff-info{flex:1;min-width:0}
 .staff-name{font-weight:600;font-size:14px;margin-bottom:2px}
-.staff-email{font-size:12.5px;color:var(--t2);margin-bottom:2px}
-.staff-joined{font-size:11px;color:var(--t3)}
-.staff-bal{display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0}
-.bal-pill{font-size:11.5px;font-weight:500;padding:4px 11px;border-radius:40px;white-space:nowrap;border:1px solid}
+.staff-email{font-size:12.5px;color:var(--t2)}
+.staff-joined{font-size:11px;color:var(--t3);margin-top:2px}
+.staff-bal{display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0}
+.bal-pill{font-size:11px;font-weight:500;padding:3px 10px;border-radius:40px;white-space:nowrap;border:1px solid}
 .bal-pill.ok{background:var(--al);color:var(--at);border-color:#B7DEC9}
-.btn-del-staff{padding:6px 12px;border:1px solid #F5B7B1;border-radius:var(--r);background:var(--dl);color:var(--dt);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s;white-space:nowrap}
+.btn-del-staff{padding:5px 12px;border:1px solid #F5B7B1;border-radius:var(--r);background:var(--dl);color:var(--dt);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all 0.15s;white-space:nowrap}
 .btn-del-staff:hover{background:#FBCCC8}
-.btn-rename-staff{padding:6px 12px;border:1px solid #B7DEC9;border-radius:var(--r);background:var(--al);color:var(--at);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s;white-space:nowrap}
+.btn-rename-staff{padding:5px 12px;border:1px solid #B7DEC9;border-radius:var(--r);background:var(--al);color:var(--at);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all 0.15s;white-space:nowrap}
 .btn-rename-staff:hover{background:#C5E8D2}
 .bal-pill.warn{background:var(--wl);color:var(--wt);border-color:#EDD69A}
 .bal-pill.danger{background:var(--dl);color:var(--dt);border-color:#F5B7B1}
@@ -239,15 +247,9 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
 
   <!-- STAFF -->
   <div class="view" id="v-staff">
-    <div class="ph" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
-      <div>
-        <h1>Staff accounts</h1>
-        <p>All registered employee accounts and their leave usage this year.</p>
-      </div>
-      <span id="staff-count" style="font-size:13px;color:var(--t2);background:var(--s2);border:1px solid var(--bd);border-radius:40px;padding:4px 14px;margin-top:4px;white-space:nowrap"></span>
-    </div>
-    <div id="staff-search-row" style="margin-bottom:16px;max-width:420px">
-      <input type="text" id="staff-search" placeholder="🔍  Search by name or email..." oninput="filterStaff()">
+    <div class="ph"><h1>Staff accounts</h1><p>All registered employee accounts and their leave usage this year.</p></div>
+    <div id="staff-search-row" style="margin-bottom:16px;max-width:360px">
+      <input type="text" id="staff-search" placeholder="Search by name or email..." oninput="filterStaff()" style="width:100%;padding:9px 12px;border:1px solid var(--bd);border-radius:var(--r);font-family:DM Sans,sans-serif;font-size:14px;outline:none;transition:border 0.15s,box-shadow 0.15s" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--bd)'">
     </div>
     <div id="staff-list"><div class="loading">Loading staff...</div></div>
   </div>
@@ -431,9 +433,9 @@ function renderRequests(){
   var a=requests.filter(function(r){return r.status==='Approved';}).length;
   var rj=requests.filter(function(r){return r.status==='Rejected';}).length;
   document.getElementById('stats-row').innerHTML=
-    '<div class="stat" style="border-left:3px solid '+(p>0?'#B7791F':'#E2DDD6')+'"><div class="stat-n" style="color:'+(p>0?'#B7791F':'var(--tx)')+'">'+p+'</div><div class="stat-l">Pending</div></div>'+
-    '<div class="stat" style="border-left:3px solid '+(a>0?'#2D6A4F':'#E2DDD6')+'"><div class="stat-n" style="color:'+(a>0?'#2D6A4F':'var(--tx)')+'">'+a+'</div><div class="stat-l">Approved</div></div>'+
-    '<div class="stat" style="border-left:3px solid '+(rj>0?'#C0392B':'#E2DDD6')+'"><div class="stat-n" style="color:'+(rj>0?'#C0392B':'var(--tx)')+'">'+rj+'</div><div class="stat-l">Rejected</div></div>';
+    '<div class="stat"><div class="stat-n">'+p+'</div><div class="stat-l">Pending</div></div>'+
+    '<div class="stat"><div class="stat-n">'+a+'</div><div class="stat-l">Approved</div></div>'+
+    '<div class="stat"><div class="stat-n">'+rj+'</div><div class="stat-l">Rejected</div></div>';
   document.getElementById('sel-all-row').style.display=p>0?'flex':'none';
   document.getElementById('clear-row').style.display=(a+rj)>0?'flex':'none';
   /* Update pending badge */
@@ -444,24 +446,50 @@ function renderRequests(){
   if(fs!=='all')fl=fl.filter(function(r){return r.status===fs;});
   if(ft!=='all')fl=fl.filter(function(r){return r.type===ft;});
   if(!fl.length){document.getElementById('req-list').innerHTML='<div class="empty">No requests found.</div>';return;}
-  document.getElementById('req-list').innerHTML=fl.map(function(r){
+  document.getElementById('req-list').innerHTML=fl.map(function(r,idx){
     var ini=r.name.split(' ').map(function(n){return n[0];}).join('').slice(0,2).toUpperCase();
     var ds=fmtD(r.start)+(r.start!==r.end?' – '+fmtD(r.end):'');
     var isSel=selectedKeys.has(r._key);
+    var detailId='mgr-detail-'+idx;
+    var reasonHtml=r.reason?'<div class="rc-detail-item"><div class="rc-detail-label">Reason</div><div class="rc-detail-value">'+esc(r.reason)+'</div></div>':'';
+    var rejectHtml=r.rejectReason?'<div class="rc-detail-item" style="grid-column:1/-1"><div class="rc-detail-label">Rejection reason</div><div class="rc-detail-value" style="color:var(--dt)">'+esc(r.rejectReason)+'</div></div>':'';
     return '<div class="rc'+(r.status==='Pending'?' selectable':'')+(isSel?' sel':'')+'" id="rc-'+r._key+'">'+
-      (r.status==='Pending'?'<input type="checkbox" class="rc-chk"'+(isSel?' checked':'')+' onchange="toggleSel(\''+r._key+'\',this.checked)">':'')+
+      (r.status==='Pending'?'<input type="checkbox" class="rc-chk"'+(isSel?' checked':'')+' onchange="toggleSel(''+r._key+'',this.checked)">':'')+
       '<div class="rc-top"><div class="rc-av">'+ini+'</div>'+
-      '<div class="rc-inf"><div class="rc-nm">'+esc(r.name)+'</div>'+
-      '<div class="rc-mt">'+esc(r.type)+' · '+ds+' · '+r.days+' day'+(r.days>1?'s':'')+'</div>'+
-      (r.reason?'<div class="rc-rs">"'+esc(r.reason)+'"</div>':'')+
-      (r.rejectReason?'<div class="rc-rr">Reason: '+esc(r.rejectReason)+'</div>':'')+
-      '<div class="rc-sb">Submitted '+r.submitted+'</div></div>'+
-      '<span class="badge badge-'+r.status.toLowerCase()+'">'+r.status+'</span></div>'+
-      (r.status==='Pending'?'<div class="rc-act">'+
-        '<button class="btn-approve" onclick="approveReq(\''+r._key+'\')">Approve</button>'+
-        '<button class="btn-reject" onclick="openRejectModal(\''+r._key+'\',\''+esc(r.name)+'\')">Reject</button>'+
-      '</div>':'')+'</div>';
+      '<div class="rc-inf">'+
+        '<div class="rc-nm">'+esc(r.name)+'</div>'+
+        '<div class="rc-mt">'+esc(r.type)+' · '+ds+' · '+r.days+' day'+(r.days>1?'s':'')+'</div>'+
+        '<div class="rc-sb">Submitted '+r.submitted+'</div>'+
+      '</div>'+
+      '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">'+
+        '<span class="badge badge-'+r.status.toLowerCase()+'">'+r.status+'</span>'+
+        '<button class="rc-expand-btn" onclick="toggleMgrDetail(''+detailId+'',this)">Details <span class="rc-chevron">▼</span></button>'+
+      '</div></div>'+
+      '<div class="rc-detail" id="'+detailId+'">'+
+        '<div class="rc-detail-grid">'+
+          '<div class="rc-detail-item"><div class="rc-detail-label">Leave type</div><div class="rc-detail-value">'+esc(r.type)+'</div></div>'+
+          '<div class="rc-detail-item"><div class="rc-detail-label">Dates</div><div class="rc-detail-value">'+ds+'</div></div>'+
+          '<div class="rc-detail-item"><div class="rc-detail-label">Working days</div><div class="rc-detail-value">'+r.days+' day'+(r.days>1?'s':'')+'</div></div>'+
+          '<div class="rc-detail-item"><div class="rc-detail-label">Submitted</div><div class="rc-detail-value">'+r.submitted+'</div></div>'+
+          reasonHtml+rejectHtml+
+        '</div>'+
+        (r.status==='Pending'?
+          '<div class="rc-act" style="padding-top:10px;border-top:1px solid var(--bd)">'+
+            '<button class="btn-approve" onclick="approveReq(''+r._key+'')">Approve</button>'+
+            '<button class="btn-reject" onclick="openRejectModal(''+r._key+'',''+esc(r.name)+'')">Reject</button>'+
+          '</div>':'')+
+      '</div>'+
+    '</div>';
   }).join('');
+}
+
+function toggleMgrDetail(id,btn){
+  var el=document.getElementById(id);
+  if(!el)return;
+  var open=el.classList.toggle('open');
+  var chev=btn.querySelector('.rc-chevron');
+  if(chev)chev.style.transform=open?'rotate(180deg)':'';
+  btn.style.color=open?'var(--ac)':'';
 }
 
 async function approveReq(key){
@@ -647,34 +675,40 @@ async function loadAndRenderStaff(){
     });
   }
 
-  /* Load requests + archive to compute leave usage */
+  /* Also load all requests + archive to catch users not yet in /users/ */
   var reqs=await loadReqs();
   var archData=await dbGet('/archive');
   var arch=archData?Object.values(archData):[];
   var combined=reqs.concat(arch);
 
+  /* Build any missing users from request history */
+  combined.forEach(function(r){
+    if(!r.name)return;
+    var found=Object.values(usersMap).some(function(u){
+      return u.name&&u.name.toLowerCase()===r.name.toLowerCase();
+    });
+    if(!found){
+      /* Create a synthetic user entry from request data */
+      var synKey='_syn_'+r.name.replace(/\s+/g,'_').toLowerCase();
+      if(!usersMap[synKey]){
+        usersMap[synKey]={_uid:null,_synth:true,name:r.name,email:r.uid?'(account exists)':'(no account)',joined:null};
+      }
+    }
+  });
+
   allUsers=Object.values(usersMap);
 
-  /* Compute leave usage and request counts per user */
+  /* Compute leave usage per user */
   allUsers.forEach(function(u){
     u._usage={};
-    u._totalReqs=0;
-    u._pendingReqs=0;
     combined.filter(function(r){
-      return r.name&&u.name&&r.name.toLowerCase()===u.name.toLowerCase();
+      return r.status==='Approved'&&r.name&&u.name&&r.name.toLowerCase()===u.name.toLowerCase();
     }).forEach(function(r){
-      u._totalReqs++;
-      if(r.status==='Pending')u._pendingReqs++;
-      if(r.status==='Approved'){
-        u._usage[r.type]=(u._usage[r.type]||0)+(r.days||0);
-      }
+      u._usage[r.type]=(u._usage[r.type]||0)+(r.days||0);
     });
   });
 
   allUsers.sort(function(a,b){return (a.name||'').localeCompare(b.name||'');});
-  /* Update staff count badge */
-  var sc=document.getElementById('staff-count');
-  if(sc) sc.textContent=allUsers.length+' member'+(allUsers.length!==1?'s':'');
   renderStaff(allUsers);
 }
 
@@ -695,37 +729,25 @@ function renderStaff(users){
   el.innerHTML=users.map(function(u){
     var ini=(u.name||'?').split(' ').map(function(n){return n[0];}).join('').slice(0,2).toUpperCase();
     var joined=u.joined?new Date(u.joined).toLocaleDateString('en-SG',{day:'2-digit',month:'short',year:'numeric'}):'—';
-    /* Balance pills with full label */
     var pills=['Annual leave','Medical leave','Emergency leave'].map(function(t){
       var used=u._usage&&u._usage[t]?u._usage[t]:0;
       var total=ENTITLEMENTS[t]||4;
       var rem=Math.max(0,total-used);
       var cls=rem===0?'danger':rem===1?'warn':'ok';
-      var shortLabel=t==='Annual leave'?'Annual':t==='Medical leave'?'Medical':'Emergency';
-      return '<span class="bal-pill '+cls+'">'+shortLabel+': '+rem+'/'+total+'d</span>';
+      return '<span class="bal-pill '+cls+'">'+t.replace(' leave','').substring(0,3)+': '+rem+'/'+total+'</span>';
     }).join('');
-    /* Pending badge */
-    var pendingBadge=(u._pendingReqs>0)?
-      '<span style="background:#FFF7ED;color:#9A3412;border:1px solid #FED7AA;font-size:11px;font-weight:600;padding:2px 8px;border-radius:40px;white-space:nowrap">'+u._pendingReqs+' pending</span>':'';
-    /* Request count */
-    var reqCount=u._totalReqs?'<span style="font-size:11px;color:var(--t3)">'+u._totalReqs+' request'+(u._totalReqs!==1?'s':'')+'</span>':'';
     var actionBtns=u._uid?
       '<div style="display:flex;gap:6px">'+
         '<button class="btn-rename-staff" data-uid="'+esc(u._uid)+'" data-name="'+esc(u.name||'')+'" onclick="openRenameStaff(this.dataset.uid,this.dataset.name)">Rename</button>'+
         '<button class="btn-del-staff" data-uid="'+esc(u._uid)+'" data-name="'+esc(u.name||'')+'" onclick="confirmDeleteStaff(this.dataset.uid,this.dataset.name)">Remove</button>'+
-      '</div>':'';
+      '</div>':
+      '<span style="font-size:11px;color:var(--t3)">No account</span>';
     return '<div class="staff-card" id="sc-'+u._uid+'">'+
       '<div class="staff-av">'+ini+'</div>'+
       '<div class="staff-info">'+
-        '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'+
-          '<div class="staff-name">'+esc(u.name||'Unknown')+'</div>'+
-          pendingBadge+
-        '</div>'+
+        '<div class="staff-name">'+esc(u.name||'Unknown')+(u._synth?'<span style="font-size:11px;color:var(--t3);margin-left:6px">(from requests)</span>':'')+'</div>'+
         '<div class="staff-email">'+esc(u.email||'')+'</div>'+
-        '<div style="display:flex;gap:10px;align-items:center;margin-top:2px">'+
-          '<div class="staff-joined">'+(u.joined?'Joined '+joined:'—')+'</div>'+
-          reqCount+
-        '</div>'+
+        '<div class="staff-joined">'+(u.joined?'Joined '+joined:'Seen in requests')+'</div>'+
       '</div>'+
       '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">'+
         '<div class="staff-bal">'+pills+'</div>'+

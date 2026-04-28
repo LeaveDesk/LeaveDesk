@@ -66,7 +66,18 @@ hr.sep{border:none;border-top:1px solid var(--bd);margin:16px 0}
 .tbl th{background:var(--s2);font-size:12px;font-weight:600;color:var(--t2);padding:10px 14px;text-align:left;border-bottom:1px solid var(--bd)}
 .tbl td{font-size:13px;padding:11px 14px;border-bottom:1px solid var(--bd);vertical-align:middle}
 .tbl tr:last-child td{border-bottom:none}
-.tbl tr:hover td{background:#FAFAF8}
+.tbl tr.req-row{cursor:pointer;transition:background 0.1s}
+.tbl tr.req-row:hover td{background:#F5F9F7}
+.tbl tr.req-row.expanded td{background:#F5F9F7;font-weight:500}
+.tbl tr.detail-row td{background:#FAFAF8;padding:0}
+.tbl tr.detail-row.hidden{display:none}
+.req-detail{padding:14px 18px;font-size:13px;line-height:1.7;border-top:1px dashed var(--bd)}
+.req-detail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 24px}
+.req-detail-item{}
+.req-detail-label{font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:2px}
+.req-detail-value{font-size:13.5px;color:var(--tx)}
+.req-chevron{font-size:11px;color:var(--t3);transition:transform 0.2s;display:inline-block;margin-left:4px}
+.req-row.expanded .req-chevron{transform:rotate(180deg)}
 .badge{font-size:11px;font-weight:500;padding:3px 9px;border-radius:40px;border:1px solid;white-space:nowrap}
 .badge-pending{background:var(--wl);color:var(--wt);border-color:#EDD69A}
 .badge-approved{background:var(--al);color:var(--at);border-color:#B7DEC9}
@@ -178,7 +189,7 @@ hr.sep{border:none;border-top:1px solid var(--bd);margin:16px 0}
         <textarea id="reason" placeholder="Brief reason..."></textarea>
       </div>
       <button class="btn-p" id="submit-btn" onclick="submitRequest()">Submit leave request</button>
-      <div class="success-inline" id="success-inline">✅ Leave request submitted! Your manager will review it shortly.</div>
+      <div class="success-inline" id="success-inline">✅ Leave request submitted!</div>
     </div>
   </div>
 
@@ -242,7 +253,7 @@ function initEmailJS(){
   }catch(e){console.error('EmailJS init failed:',e);}
 }
 initEmailJS();
-var currentUser=null, allRequests=[], calEvents=[];
+var currentUser=null, allRequests=[], calEvents=[], calMap={};
 var cal={y:new Date().getFullYear(),m:new Date().getMonth()};
 
 /* AUTH GUARD */
@@ -400,12 +411,18 @@ async function submitRequest(){
     document.getElementById('balance-warn').style.display='none';
     document.getElementById('success-inline').style.display='block';
     setTimeout(function(){document.getElementById('success-inline').style.display='none';},5000);
-    /* Email notification to manager */
-    sendManagerNotification({name:name,type:type,start:start,end:end,days:days,reason:reason||'(none)'});
   } else showToast('Failed — check database connection.');
 }
 
 /* MY APPROVALS */
+function toggleDetail(idx,row){
+  var detail=document.getElementById('detail-'+idx);
+  if(!detail)return;
+  var hidden=detail.classList.contains('hidden');
+  detail.classList.toggle('hidden',!hidden);
+  row.classList.toggle('expanded',hidden);
+}
+
 async function cancelRequest(key){
   if(!confirm('Cancel this leave request? This cannot be undone.'))return;
   try{
@@ -431,21 +448,35 @@ async function loadMyRequests(){
     var used=usedByType[t]||0,total=ENTITLEMENTS[t]||4,rem=Math.max(0,total-used);
     var pct=Math.min(100,Math.round((used/total)*100));
     var fc=pct>=100?'danger':pct>75?'warn':'';
-    var statusText=pct>=100?'All used':''+used+' used';
-    bh+='<div class="bal-card">'+
-      '<div class="bal-type">'+t.replace(' leave','')+'</div>'+
-      '<div class="bal-nums"><span class="bal-big">'+rem+'</span><span class="bal-of">/ '+total+' days</span></div>'+
-      '<div class="bal-bar"><div class="bal-fill '+fc+'" style="width:'+pct+'%"></div></div>'+
-      '<div style="font-size:11px;color:var(--t3);margin-top:4px">'+statusText+'</div>'+
-    '</div>';
+    bh+='<div class="bal-card"><div class="bal-type">'+t.replace(' leave','')+'</div><div class="bal-nums"><span class="bal-big">'+rem+'</span><span class="bal-of">/ '+total+'d</span></div><div class="bal-bar"><div class="bal-fill '+fc+'" style="width:'+pct+'%"></div></div></div>';
   });
   bh+='</div>';bal.innerHTML=bh;
-  if(!all.length){list.innerHTML='<div class="empty" style="text-align:center;padding:32px;color:var(--t3)"><p style="font-size:24px;margin-bottom:8px">📋</p><p style="font-weight:500;color:var(--t2);margin-bottom:6px">No leave requests yet</p><p style="font-size:13px">Go to <strong>Request leave</strong> to submit your first request.</p></div>';return;}
-  var tbl='<table class="tbl"><thead><tr><th>Type</th><th>Dates</th><th>Days</th><th>Submitted</th><th>Status</th></tr></thead><tbody>';
-  tbl+=all.map(function(r){
+  if(!all.length){list.innerHTML='<div class="empty">No leave requests yet. Submit one on the "Request leave" tab.</div>';return;}
+  var tbl='<table class="tbl"><thead><tr><th>Type</th><th>Dates</th><th>Days</th><th>Status</th></tr></thead><tbody>';
+  tbl+=all.map(function(r,idx){
     var ds=fmtD(r.start)+(r.start!==r.end?' – '+fmtD(r.end):'');
-    var extra=r.rejectReason?'<br><span style="font-size:11px;color:var(--dt)">'+esc(r.rejectReason)+'</span>':'';
-    return '<tr><td>'+esc(r.type)+'</td><td style="white-space:nowrap">'+ds+'</td><td>'+r.days+'</td><td style="white-space:nowrap">'+r.submitted+'</td><td><span class="badge badge-'+r.status.toLowerCase()+'">'+r.status+'</span>'+extra+'</td></tr>';
+    var cancelBtn=(!r._archived&&r.status==='Pending')
+      ?'<button onclick="event.stopPropagation();cancelRequest(''+r._key+'')" style="padding:4px 10px;border:1px solid #F5B7B1;border-radius:6px;background:#FDECEA;color:#7B241C;font-family:DM Sans,sans-serif;font-size:11px;cursor:pointer;white-space:nowrap;margin-top:8px;display:inline-block">Cancel request</button>':'';
+    var reasonHtml=r.reason?'<div class="req-detail-item"><div class="req-detail-label">Reason given</div><div class="req-detail-value">'+esc(r.reason)+'</div></div>':'';
+    var rejectHtml=r.rejectReason?'<div class="req-detail-item" style="grid-column:1/-1"><div class="req-detail-label">Rejection reason</div><div class="req-detail-value" style="color:var(--dt)">'+esc(r.rejectReason)+'</div></div>':'';
+    var detail='<tr class="detail-row hidden" id="detail-'+idx+'"><td colspan="4">'+
+      '<div class="req-detail">'+
+        '<div class="req-detail-grid">'+
+          '<div class="req-detail-item"><div class="req-detail-label">Leave type</div><div class="req-detail-value">'+esc(r.type)+'</div></div>'+
+          '<div class="req-detail-item"><div class="req-detail-label">Dates</div><div class="req-detail-value">'+ds+'</div></div>'+
+          '<div class="req-detail-item"><div class="req-detail-label">Working days</div><div class="req-detail-value">'+r.days+' day'+(r.days>1?'s':'')+'</div></div>'+
+          '<div class="req-detail-item"><div class="req-detail-label">Submitted</div><div class="req-detail-value">'+r.submitted+'</div></div>'+
+          reasonHtml+rejectHtml+
+        '</div>'+
+        cancelBtn+
+      '</div>'+
+    '</td></tr>';
+    return '<tr class="req-row" onclick="toggleDetail('+idx+',this)">'+
+      '<td>'+esc(r.type)+'<span class="req-chevron">▼</span></td>'+
+      '<td style="white-space:nowrap;font-size:12.5px">'+ds+'</td>'+
+      '<td>'+r.days+'</td>'+
+      '<td><span class="badge badge-'+r.status.toLowerCase()+'">'+r.status+'</span></td>'+
+    '</tr>'+detail;
   }).join('');
   list.innerHTML=tbl+'</tbody></table>';
 }
@@ -473,15 +504,16 @@ function renderCal(){
   var y=cal.y,m=cal.m;
   var MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
   document.getElementById('cal-title').textContent=MN[m]+' '+y;
-  var map={};
+  calMap={};
   allRequests.filter(function(r){return r.status!=='Rejected';}).forEach(function(r){
     var cur=new Date(r.start+'T00:00:00'),ed=new Date(r.end+'T00:00:00');
-    while(cur<=ed){var k=cur.toISOString().slice(0,10);if(!map[k])map[k]=[];map[k].push({lbl:r.name.split(' ')[0],cls:leaveClass(r.type,r.status.toLowerCase()),d:r.name+' — '+r.type,status:r.status,reason:r.reason,type:r.type});cur.setDate(cur.getDate()+1);}
+    while(cur<=ed){var k=cur.toISOString().slice(0,10);if(!calMap[k])calMap[k]=[];calMap[k].push({lbl:r.name.split(' ')[0],cls:leaveClass(r.type,r.status.toLowerCase()),name:r.name,status:r.status,reason:r.reason,type:r.type,isLeave:true});cur.setDate(cur.getDate()+1);}
   });
   calEvents.forEach(function(ev){
     var cur=new Date(ev.start+'T00:00:00'),ed=new Date((ev.end||ev.start)+'T00:00:00');
-    while(cur<=ed){var k=cur.toISOString().slice(0,10);if(!map[k])map[k]=[];map[k].push({lbl:ev.title,cls:'event',d:'📌 '+ev.title,status:'event',ts:ev.ts,notes:ev.notes});cur.setDate(cur.getDate()+1);}
+    while(cur<=ed){var k=cur.toISOString().slice(0,10);if(!calMap[k])calMap[k]=[];calMap[k].push({lbl:ev.title,cls:'event',isLeave:false,title:ev.title,ts:ev.ts,te:ev.te,notes:ev.notes});cur.setDate(cur.getDate()+1);}
   });
+  var map=calMap;
   var first=new Date(y,m,1).getDay(),dim=new Date(y,m+1,0).getDate(),prev=new Date(y,m,0).getDate();
   var today=new Date().toISOString().slice(0,10);
   var DN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -505,15 +537,32 @@ function showDay(ds){
   var MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
   var dt=new Date(ds+'T00:00:00');
   document.getElementById('day-title').textContent=dt.getDate()+' '+MN[dt.getMonth()]+' '+dt.getFullYear();
-  var items=[],target=new Date(ds+'T00:00:00');
-  allRequests.forEach(function(r){var s=new Date(r.start+'T00:00:00'),e=new Date(r.end+'T00:00:00');if(target>=s&&target<=e)items.push({isLeave:true,name:r.name,type:r.type,status:r.status,reason:r.reason});});
-  calEvents.forEach(function(ev){var s=new Date(ev.start+'T00:00:00'),e=new Date((ev.end||ev.start)+'T00:00:00');if(target>=s&&target<=e)items.push({isLeave:false,title:ev.title,ts:ev.ts,te:ev.te,notes:ev.notes});});
+  /* Use calMap directly — same data used to render the calendar, guaranteed accurate */
+  var items=calMap[ds]||[];
   var dc={'Approved':'var(--ac)','Pending':'var(--wn)','Rejected':'var(--dn)'};
   document.getElementById('day-body').innerHTML=items.length?items.map(function(item){
-    if(item.isLeave){var col=dc[item.status]||'var(--ac)';
-      return '<div style="padding:8px 0;border-bottom:1px solid var(--bd)"><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><div style="width:8px;height:8px;border-radius:50%;background:'+col+'"></div><strong>'+esc(item.name)+'</strong><span class="badge badge-'+item.status.toLowerCase()+'">'+item.status+'</span></div><div style="font-size:13px;color:var(--t2);margin-left:16px">'+esc(item.type)+'</div>'+(item.reason?'<div style="font-size:12px;color:var(--t3);margin-left:16px;font-style:italic">"'+esc(item.reason)+'"</div>':'')+' </div>';
-    }else{return '<div style="padding:8px 0;border-bottom:1px solid var(--bd)"><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><div style="width:8px;height:8px;border-radius:50%;background:#4F46E5"></div><strong>📌 '+esc(item.title)+'</strong></div>'+(item.ts?'<div style="font-size:13px;color:var(--t2);margin-left:16px">'+item.ts+(item.te?' – '+item.te:'')+'</div>':'')+(item.notes?'<div style="font-size:12px;color:var(--t3);margin-left:16px">'+esc(item.notes)+'</div>':'')+' </div>';}
-  }).join(''):'<p style="color:var(--t3);font-size:14px">No leave or events on this date.</p>';
+    if(item.isLeave){
+      var col=dc[item.status]||'var(--ac)';
+      return '<div style="padding:10px 0;border-bottom:1px solid var(--bd)">'+
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'+
+          '<div style="width:8px;height:8px;border-radius:50%;background:'+col+';flex-shrink:0"></div>'+
+          '<strong style="font-size:14px">'+esc(item.name)+'</strong>'+
+          '<span class="badge badge-'+item.status.toLowerCase()+'">'+item.status+'</span>'+
+        '</div>'+
+        '<div style="font-size:13px;color:var(--t2);margin-left:16px">'+esc(item.type)+'</div>'+
+        (item.reason?'<div style="font-size:12px;color:var(--t3);margin-left:16px;font-style:italic;margin-top:2px">"'+esc(item.reason)+'"</div>':'')+
+      '</div>';
+    } else {
+      return '<div style="padding:10px 0;border-bottom:1px solid var(--bd)">'+
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'+
+          '<div style="width:8px;height:8px;border-radius:50%;background:#4F46E5;flex-shrink:0"></div>'+
+          '<strong style="font-size:14px">📌 '+esc(item.title)+'</strong>'+
+        '</div>'+
+        (item.ts?'<div style="font-size:13px;color:var(--t2);margin-left:16px">'+item.ts+(item.te?' – '+item.te:'')+'</div>':'')+
+        (item.notes?'<div style="font-size:12px;color:var(--t3);margin-left:16px;margin-top:2px">'+esc(item.notes)+'</div>':'')+
+      '</div>';
+    }
+  }).join(''):'<p style="color:var(--t3);font-size:14px;text-align:center;padding:12px 0">No leave or events on this date.</p>';
   document.getElementById('modal-day').classList.add('open');
 }
 function closeModal(){document.getElementById('modal-day').classList.remove('open');}
@@ -549,26 +598,15 @@ function sendManagerNotification(data){
     message:    data.name+' submitted a '+data.type+' request from '+fmtD(data.start)+' to '+fmtD(data.end)+' ('+data.days+' working day'+(data.days>1?'s':'')+')'+(data.reason?'. Reason: '+data.reason:'')+'.'
   };
   console.log('EmailJS: sending to',MANAGER_EMAIL_TO,'via service',EMAILJS_SERVICE_ID,'template',EMAILJS_TEMPLATE_ID);
-  /* Wrap in timeout so a slow EmailJS never blocks the UI */
-  var ejsTimeout=setTimeout(function(){
-    console.warn('EmailJS: no response after 10s');
-  },10000);
   emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, params)
     .then(function(res){
-      clearTimeout(ejsTimeout);
-      console.log('EmailJS: sent successfully — status:',res.status,'text:',res.text);
-      if(res.status===200){
-        showToast('✉️ Manager notified by email');
-      } else {
-        console.warn('EmailJS: unexpected status',res.status);
-      }
+      console.log('EmailJS: sent successfully',res.status,res.text);
+      showToast('✉️ Manager notified by email');
     })
     .catch(function(err){
-      clearTimeout(ejsTimeout);
-      var errDetail=err.text||err.status||JSON.stringify(err)||'unknown error';
-      console.error('EmailJS failed:',errDetail);
-      /* Helpful toast with the real error so it is easy to diagnose */
-      showToast('⚠️ Email alert failed: '+errDetail);
+      console.error('EmailJS error:',JSON.stringify(err));
+      /* Show user-visible error for debugging */
+      showToast('Note: email notification failed ('+( err.text||err.status||'unknown')+')');
     });
 }
 
