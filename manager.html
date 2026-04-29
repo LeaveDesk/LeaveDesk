@@ -454,7 +454,7 @@ function renderRequests(){
     var reasonHtml=r.reason?'<div class="rc-detail-item"><div class="rc-detail-label">Reason</div><div class="rc-detail-value">'+esc(r.reason)+'</div></div>':'';
     var rejectHtml=r.rejectReason?'<div class="rc-detail-item" style="grid-column:1/-1"><div class="rc-detail-label">Rejection reason</div><div class="rc-detail-value" style="color:var(--dt)">'+esc(r.rejectReason)+'</div></div>':'';
     return '<div class="rc'+(r.status==='Pending'?' selectable':'')+(isSel?' sel':'')+'" id="rc-'+r._key+'">'+
-      (r.status==='Pending'?'<input type="checkbox" class="rc-chk"'+(isSel?' checked':'')+' onchange="toggleSel(''+r._key+'',this.checked)">':'')+
+      (r.status==='Pending'?'<input type="checkbox" class="rc-chk"'+(isSel?' checked':'')+' onchange="toggleSel(this.dataset.key,this.checked)" data-key="'+r._key+'">':'')+
       '<div class="rc-top"><div class="rc-av">'+ini+'</div>'+
       '<div class="rc-inf">'+
         '<div class="rc-nm">'+esc(r.name)+'</div>'+
@@ -463,7 +463,7 @@ function renderRequests(){
       '</div>'+
       '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">'+
         '<span class="badge badge-'+r.status.toLowerCase()+'">'+r.status+'</span>'+
-        '<button class="rc-expand-btn" onclick="toggleMgrDetail(''+detailId+'',this)">Details <span class="rc-chevron">▼</span></button>'+
+        '<button class="rc-expand-btn" onclick="toggleMgrDetail(this.dataset.did,this)" data-did="'+detailId+'">Details <span class="rc-chevron">▼</span></button>'+
       '</div></div>'+
       '<div class="rc-detail" id="'+detailId+'">'+
         '<div class="rc-detail-grid">'+
@@ -475,8 +475,8 @@ function renderRequests(){
         '</div>'+
         (r.status==='Pending'?
           '<div class="rc-act" style="padding-top:10px;border-top:1px solid var(--bd)">'+
-            '<button class="btn-approve" onclick="approveReq(''+r._key+'')">Approve</button>'+
-            '<button class="btn-reject" onclick="openRejectModal(''+r._key+'',''+esc(r.name)+'')">Reject</button>'+
+            '<button class="btn-approve" onclick="approveReq(this.dataset.key)" data-key="'+r._key+'">Approve</button>'+
+            '<button class="btn-reject" onclick="openRejectModal(this.dataset.key,this.dataset.name)" data-key="'+r._key+'" data-name="'+esc(r.name)+'">Reject</button>'+
           '</div>':'')+
       '</div>'+
     '</div>';
