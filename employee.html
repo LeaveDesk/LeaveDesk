@@ -237,7 +237,21 @@ hr.sep{border:none;border-top:1px solid var(--bd);margin:16px 0}
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script>
-firebase.initializeApp(FIREBASE_CONFIG);
+/* Safety timeout — if auth never fires after 8s, redirect to login */
+var _loadTimeout=setTimeout(function(){
+  var ls=document.getElementById('loading-screen');
+  if(ls&&ls.style.display!=='none'){
+    console.error('Auth timeout — redirecting to login');
+    location.href='auth.html';
+  }
+},8000);
+
+try{
+  firebase.initializeApp(FIREBASE_CONFIG);
+}catch(e){
+  console.error('Firebase init failed:',e);
+  location.href='auth.html';
+}
 var auth=firebase.auth(), db=firebase.database();
 
 /* Init EmailJS if enabled — wait for SDK to load */
@@ -261,6 +275,7 @@ auth.onAuthStateChanged(function(user){
   if(!user){location.href='auth.html';return;}
   if(!user.emailVerified){
     currentUser=user;
+    clearTimeout(_loadTimeout);
     document.getElementById('loading-screen').style.display='none';
     document.getElementById('verify-banner').style.display='flex';
     /* Still set name/avatar so page isn't blank */
@@ -277,6 +292,7 @@ auth.onAuthStateChanged(function(user){
   var ini=name.split(' ').map(function(n){return n[0];}).join('').slice(0,2).toUpperCase();
   document.getElementById('user-avatar').textContent=ini;
   document.getElementById('user-name-nav').textContent=name;
+  clearTimeout(_loadTimeout);
   document.getElementById('loading-screen').style.display='none';
   var today=new Date().toISOString().slice(0,10);
   document.getElementById('start-date').min=today;
@@ -456,7 +472,7 @@ async function loadMyRequests(){
   tbl+=all.map(function(r,idx){
     var ds=fmtD(r.start)+(r.start!==r.end?' – '+fmtD(r.end):'');
     var cancelBtn=(!r._archived&&r.status==='Pending')
-      ?'<button onclick="event.stopPropagation();cancelRequest(''+r._key+'')" style="padding:4px 10px;border:1px solid #F5B7B1;border-radius:6px;background:#FDECEA;color:#7B241C;font-family:DM Sans,sans-serif;font-size:11px;cursor:pointer;white-space:nowrap;margin-top:8px;display:inline-block">Cancel request</button>':'';
+      ?'<button onclick="event.stopPropagation();cancelRequest(\''+r._key+'\')" style="padding:4px 10px;border:1px solid #F5B7B1;border-radius:6px;background:#FDECEA;color:#7B241C;font-family:DM Sans,sans-serif;font-size:11px;cursor:pointer;white-space:nowrap;margin-top:8px;display:inline-block">Cancel request</button>':'';
     var reasonHtml=r.reason?'<div class="req-detail-item"><div class="req-detail-label">Reason given</div><div class="req-detail-value">'+esc(r.reason)+'</div></div>':'';
     var rejectHtml=r.rejectReason?'<div class="req-detail-item" style="grid-column:1/-1"><div class="req-detail-label">Rejection reason</div><div class="req-detail-value" style="color:var(--dt)">'+esc(r.rejectReason)+'</div></div>':'';
     var detail='<tr class="detail-row hidden" id="detail-'+idx+'"><td colspan="4">'+
