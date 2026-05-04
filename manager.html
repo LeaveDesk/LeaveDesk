@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- LeaveDesk Manager v3.1 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -350,29 +351,30 @@ var requests=[],calEvents=[],allUsers=[],selectedKeys=new Set(),pendingRejectKey
 var cal={y:new Date().getFullYear(),m:new Date().getMonth()};
 var loggedIn=false;
 
-/* Wait for DOM then restore session */
-document.addEventListener('DOMContentLoaded',function(){
-  renderCal();
+/* Script is at bottom of body so DOM is already ready - run immediately */
+(function init(){
+  try{ renderCal(); } catch(e){ console.warn('renderCal init error:',e); }
   if(sessionStorage.getItem('mgr_logged')==='1'){
     loggedIn=true;
     showDashboard();
     loadAndRenderRequests();
   }
-});
+})();
 
 function checkPw(){
   var pw=document.getElementById('mgr-pw').value;
-  if(!pw){var fg=document.getElementById('fg-pw');fg.classList.add('field-err');fg.querySelector('.err-msg').textContent='Please enter the manager password.';return;}
-  /* Fallback if config.js failed to load */
-  var correctPw=(typeof MGR_PW!=='undefined'&&MGR_PW)?MGR_PW:'admin4321';
+  var fg=document.getElementById('fg-pw');
+  if(!pw){fg.classList.add('field-err');fg.querySelector('.err-msg').textContent='Please enter the manager password.';return;}
+  /* Primary: from config.js. Hardcoded fallback if config.js not loaded */
+  var correctPw='admin4321';
+  try{if(typeof MGR_PW!=='undefined'&&MGR_PW)correctPw=MGR_PW;}catch(e){}
   if(pw===correctPw){
     loggedIn=true;
     sessionStorage.setItem('mgr_logged','1');
-    document.getElementById('fg-pw').classList.remove('field-err');
+    fg.classList.remove('field-err');
     showDashboard();
     loadAndRenderRequests();
   } else {
-    var fg=document.getElementById('fg-pw');
     fg.classList.add('field-err');
     fg.querySelector('.err-msg').textContent='Incorrect password. Try again.';
     var inp=document.getElementById('mgr-pw');
