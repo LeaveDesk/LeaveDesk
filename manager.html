@@ -677,36 +677,28 @@ async function loadAndRenderStaff(){
     });
   }
 
-  /* Also load all requests + archive to catch users not yet in /users/ */
+  /* Load requests + archive to compute leave usage */
   var reqs=await loadReqs();
   var archData=await dbGet('/archive');
   var arch=archData?Object.values(archData):[];
   var combined=reqs.concat(arch);
 
-  /* Build any missing users from request history */
-  combined.forEach(function(r){
-    if(!r.name)return;
-    var found=Object.values(usersMap).some(function(u){
-      return u.name&&u.name.toLowerCase()===r.name.toLowerCase();
-    });
-    if(!found){
-      /* Create a synthetic user entry from request data */
-      var synKey='_syn_'+r.name.replace(/\s+/g,'_').toLowerCase();
-      if(!usersMap[synKey]){
-        usersMap[synKey]={_uid:null,_synth:true,name:r.name,email:r.uid?'(account exists)':'(no account)',joined:null};
-      }
-    }
-  });
-
+  /* Only show real registered accounts — no ghost entries */
   allUsers=Object.values(usersMap);
 
-  /* Compute leave usage per user */
+  /* Compute leave usage per real user */
   allUsers.forEach(function(u){
     u._usage={};
+    u._totalReqs=0;
+    u._pendingReqs=0;
     combined.filter(function(r){
-      return r.status==='Approved'&&r.name&&u.name&&r.name.toLowerCase()===u.name.toLowerCase();
+      return r.name&&u.name&&r.name.toLowerCase()===u.name.toLowerCase();
     }).forEach(function(r){
-      u._usage[r.type]=(u._usage[r.type]||0)+(r.days||0);
+      u._totalReqs++;
+      if(r.status==='Pending') u._pendingReqs++;
+      if(r.status==='Approved'){
+        u._usage[r.type]=(u._usage[r.type]||0)+(r.days||0);
+      }
     });
   });
 
@@ -747,9 +739,9 @@ function renderStaff(users){
     return '<div class="staff-card" id="sc-'+u._uid+'">'+
       '<div class="staff-av">'+ini+'</div>'+
       '<div class="staff-info">'+
-        '<div class="staff-name">'+esc(u.name||'Unknown')+(u._synth?'<span style="font-size:11px;color:var(--t3);margin-left:6px">(from requests)</span>':'')+'</div>'+
+        '<div class="staff-name">'+esc(u.name||'Unknown')+'</div>'+
         '<div class="staff-email">'+esc(u.email||'')+'</div>'+
-        '<div class="staff-joined">'+(u.joined?'Joined '+joined:'Seen in requests')+'</div>'+
+        '<div class="staff-joined">'+(u.joined?'Joined '+joined:'—')+'</div>'+
       '</div>'+
       '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">'+
         '<div class="staff-bal">'+pills+'</div>'+
