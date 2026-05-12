@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!-- LeaveDesk Manager v3.1 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -78,14 +77,6 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
 /* REQUEST CARDS */
 .rc{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);padding:15px 18px;margin-bottom:9px;transition:border-color 0.13s;box-shadow:0 1px 3px rgba(0,0,0,0.03);position:relative}
 .rc:hover{border-color:var(--bd2)}.rc.sel{border-color:#B7DEC9;background:#F7FDF9}
-.rc-expand-btn{background:none;border:none;font-size:12px;color:var(--t3);cursor:pointer;padding:0;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:3px;transition:color 0.15s;white-space:nowrap}
-.rc-expand-btn:hover{color:var(--ac)}
-.rc-chevron{display:inline-block;transition:transform 0.2s;font-size:10px}
-.rc-detail{display:none;margin-top:12px;padding-top:12px;border-top:1px dashed var(--bd);font-size:13px}
-.rc-detail.open{display:block}
-.rc-detail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 24px;margin-bottom:8px}
-.rc-detail-item .rc-detail-label{font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:2px}
-.rc-detail-item .rc-detail-value{font-size:13.5px;color:var(--tx)}
 .rc-chk{display:none;position:absolute;top:18px;left:16px;width:16px;height:16px;cursor:pointer;accent-color:var(--ac)}
 .rc.selectable .rc-chk{display:block}.rc.selectable .rc-top{padding-left:26px}
 .rc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
@@ -242,6 +233,7 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
     </div>
     <div class="clear-row" id="clear-row" style="display:none">
       <button class="btn-clear" onclick="archiveResolved()">🗂 Archive resolved</button>
+      <button class="btn-clear" id="btn-export" onclick="exportCSV()" style="margin-left:8px;color:var(--at);border-color:#B7DEC9" title="Download all requests as spreadsheet">⬇ Export CSV</button>
     </div>
     <div id="req-list"></div>
   </div>
@@ -351,30 +343,29 @@ var requests=[],calEvents=[],allUsers=[],selectedKeys=new Set(),pendingRejectKey
 var cal={y:new Date().getFullYear(),m:new Date().getMonth()};
 var loggedIn=false;
 
-/* Script is at bottom of body so DOM is already ready - run immediately */
-(function init(){
-  try{ renderCal(); } catch(e){ console.warn('renderCal init error:',e); }
+/* Wait for DOM then restore session */
+document.addEventListener('DOMContentLoaded',function(){
+  renderCal();
   if(sessionStorage.getItem('mgr_logged')==='1'){
     loggedIn=true;
     showDashboard();
     loadAndRenderRequests();
   }
-})();
+});
 
 function checkPw(){
   var pw=document.getElementById('mgr-pw').value;
-  var fg=document.getElementById('fg-pw');
-  if(!pw){fg.classList.add('field-err');fg.querySelector('.err-msg').textContent='Please enter the manager password.';return;}
-  /* Primary: from config.js. Hardcoded fallback if config.js not loaded */
-  var correctPw='admin4321';
-  try{if(typeof MGR_PW!=='undefined'&&MGR_PW)correctPw=MGR_PW;}catch(e){}
+  if(!pw){var fg=document.getElementById('fg-pw');fg.classList.add('field-err');fg.querySelector('.err-msg').textContent='Please enter the manager password.';return;}
+  /* Fallback if config.js failed to load */
+  var correctPw=(typeof MGR_PW!=='undefined'&&MGR_PW)?MGR_PW:'admin4321';
   if(pw===correctPw){
     loggedIn=true;
     sessionStorage.setItem('mgr_logged','1');
-    fg.classList.remove('field-err');
+    document.getElementById('fg-pw').classList.remove('field-err');
     showDashboard();
     loadAndRenderRequests();
   } else {
+    var fg=document.getElementById('fg-pw');
     fg.classList.add('field-err');
     fg.querySelector('.err-msg').textContent='Incorrect password. Try again.';
     var inp=document.getElementById('mgr-pw');
@@ -440,6 +431,7 @@ function renderRequests(){
     '<div class="stat"><div class="stat-n">'+rj+'</div><div class="stat-l">Rejected</div></div>';
   document.getElementById('sel-all-row').style.display=p>0?'flex':'none';
   document.getElementById('clear-row').style.display=(a+rj)>0?'flex':'none';
+  document.getElementById('btn-export').style.display=requests.length>0?'flex':'none';
   /* Update pending badge */
   var badge=document.getElementById('pending-badge');
   if(badge){badge.textContent=p;badge.style.display=p>0?'inline-flex':'none';}
@@ -448,50 +440,24 @@ function renderRequests(){
   if(fs!=='all')fl=fl.filter(function(r){return r.status===fs;});
   if(ft!=='all')fl=fl.filter(function(r){return r.type===ft;});
   if(!fl.length){document.getElementById('req-list').innerHTML='<div class="empty">No requests found.</div>';return;}
-  document.getElementById('req-list').innerHTML=fl.map(function(r,idx){
+  document.getElementById('req-list').innerHTML=fl.map(function(r){
     var ini=r.name.split(' ').map(function(n){return n[0];}).join('').slice(0,2).toUpperCase();
     var ds=fmtD(r.start)+(r.start!==r.end?' – '+fmtD(r.end):'');
     var isSel=selectedKeys.has(r._key);
-    var detailId='mgr-detail-'+idx;
-    var reasonHtml=r.reason?'<div class="rc-detail-item"><div class="rc-detail-label">Reason</div><div class="rc-detail-value">'+esc(r.reason)+'</div></div>':'';
-    var rejectHtml=r.rejectReason?'<div class="rc-detail-item" style="grid-column:1/-1"><div class="rc-detail-label">Rejection reason</div><div class="rc-detail-value" style="color:var(--dt)">'+esc(r.rejectReason)+'</div></div>':'';
     return '<div class="rc'+(r.status==='Pending'?' selectable':'')+(isSel?' sel':'')+'" id="rc-'+r._key+'">'+
-      (r.status==='Pending'?'<input type="checkbox" class="rc-chk"'+(isSel?' checked':'')+' onchange="toggleSel(this.dataset.key,this.checked)" data-key="'+r._key+'">':'')+
+      (r.status==='Pending'?'<input type="checkbox" class="rc-chk"'+(isSel?' checked':'')+' onchange="toggleSel(\''+r._key+'\',this.checked)">':'')+
       '<div class="rc-top"><div class="rc-av">'+ini+'</div>'+
-      '<div class="rc-inf">'+
-        '<div class="rc-nm">'+esc(r.name)+'</div>'+
-        '<div class="rc-mt">'+esc(r.type)+' · '+ds+' · '+r.days+' day'+(r.days>1?'s':'')+'</div>'+
-        '<div class="rc-sb">Submitted '+r.submitted+'</div>'+
-      '</div>'+
-      '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">'+
-        '<span class="badge badge-'+r.status.toLowerCase()+'">'+r.status+'</span>'+
-        '<button class="rc-expand-btn" onclick="toggleMgrDetail(this.dataset.did,this)" data-did="'+detailId+'">Details <span class="rc-chevron">▼</span></button>'+
-      '</div></div>'+
-      '<div class="rc-detail" id="'+detailId+'">'+
-        '<div class="rc-detail-grid">'+
-          '<div class="rc-detail-item"><div class="rc-detail-label">Leave type</div><div class="rc-detail-value">'+esc(r.type)+'</div></div>'+
-          '<div class="rc-detail-item"><div class="rc-detail-label">Dates</div><div class="rc-detail-value">'+ds+'</div></div>'+
-          '<div class="rc-detail-item"><div class="rc-detail-label">Working days</div><div class="rc-detail-value">'+r.days+' day'+(r.days>1?'s':'')+'</div></div>'+
-          '<div class="rc-detail-item"><div class="rc-detail-label">Submitted</div><div class="rc-detail-value">'+r.submitted+'</div></div>'+
-          reasonHtml+rejectHtml+
-        '</div>'+
-        (r.status==='Pending'?
-          '<div class="rc-act" style="padding-top:10px;border-top:1px solid var(--bd)">'+
-            '<button class="btn-approve" onclick="approveReq(this.dataset.key)" data-key="'+r._key+'">Approve</button>'+
-            '<button class="btn-reject" onclick="openRejectModal(this.dataset.key,this.dataset.name)" data-key="'+r._key+'" data-name="'+esc(r.name)+'">Reject</button>'+
-          '</div>':'')+
-      '</div>'+
-    '</div>';
+      '<div class="rc-inf"><div class="rc-nm">'+esc(r.name)+'</div>'+
+      '<div class="rc-mt">'+esc(r.type)+' · '+ds+' · '+r.days+' day'+(r.days>1?'s':'')+'</div>'+
+      (r.reason?'<div class="rc-rs">"'+esc(r.reason)+'"</div>':'')+
+      (r.rejectReason?'<div class="rc-rr">Reason: '+esc(r.rejectReason)+'</div>':'')+
+      '<div class="rc-sb">Submitted '+r.submitted+'</div></div>'+
+      '<span class="badge badge-'+r.status.toLowerCase()+'">'+r.status+'</span></div>'+
+      (r.status==='Pending'?'<div class="rc-act">'+
+        '<button class="btn-approve" onclick="approveReq(\''+r._key+'\')">Approve</button>'+
+        '<button class="btn-reject" onclick="openRejectModal(\''+r._key+'\',\''+esc(r.name)+'\')">Reject</button>'+
+      '</div>':'')+'</div>';
   }).join('');
-}
-
-function toggleMgrDetail(id,btn){
-  var el=document.getElementById(id);
-  if(!el)return;
-  var open=el.classList.toggle('open');
-  var chev=btn.querySelector('.rc-chevron');
-  if(chev)chev.style.transform=open?'rotate(180deg)':'';
-  btn.style.color=open?'var(--ac)':'';
 }
 
 async function approveReq(key){
@@ -677,28 +643,36 @@ async function loadAndRenderStaff(){
     });
   }
 
-  /* Load requests + archive to compute leave usage */
+  /* Also load all requests + archive to catch users not yet in /users/ */
   var reqs=await loadReqs();
   var archData=await dbGet('/archive');
   var arch=archData?Object.values(archData):[];
   var combined=reqs.concat(arch);
 
-  /* Only show real registered accounts — no ghost entries */
+  /* Build any missing users from request history */
+  combined.forEach(function(r){
+    if(!r.name)return;
+    var found=Object.values(usersMap).some(function(u){
+      return u.name&&u.name.toLowerCase()===r.name.toLowerCase();
+    });
+    if(!found){
+      /* Create a synthetic user entry from request data */
+      var synKey='_syn_'+r.name.replace(/\s+/g,'_').toLowerCase();
+      if(!usersMap[synKey]){
+        usersMap[synKey]={_uid:null,_synth:true,name:r.name,email:r.uid?'(account exists)':'(no account)',joined:null};
+      }
+    }
+  });
+
   allUsers=Object.values(usersMap);
 
-  /* Compute leave usage per real user */
+  /* Compute leave usage per user */
   allUsers.forEach(function(u){
     u._usage={};
-    u._totalReqs=0;
-    u._pendingReqs=0;
     combined.filter(function(r){
-      return r.name&&u.name&&r.name.toLowerCase()===u.name.toLowerCase();
+      return r.status==='Approved'&&r.name&&u.name&&r.name.toLowerCase()===u.name.toLowerCase();
     }).forEach(function(r){
-      u._totalReqs++;
-      if(r.status==='Pending') u._pendingReqs++;
-      if(r.status==='Approved'){
-        u._usage[r.type]=(u._usage[r.type]||0)+(r.days||0);
-      }
+      u._usage[r.type]=(u._usage[r.type]||0)+(r.days||0);
     });
   });
 
@@ -739,9 +713,9 @@ function renderStaff(users){
     return '<div class="staff-card" id="sc-'+u._uid+'">'+
       '<div class="staff-av">'+ini+'</div>'+
       '<div class="staff-info">'+
-        '<div class="staff-name">'+esc(u.name||'Unknown')+'</div>'+
+        '<div class="staff-name">'+esc(u.name||'Unknown')+(u._synth?'<span style="font-size:11px;color:var(--t3);margin-left:6px">(from requests)</span>':'')+'</div>'+
         '<div class="staff-email">'+esc(u.email||'')+'</div>'+
-        '<div class="staff-joined">'+(u.joined?'Joined '+joined:'—')+'</div>'+
+        '<div class="staff-joined">'+(u.joined?'Joined '+joined:'Seen in requests')+'</div>'+
       '</div>'+
       '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">'+
         '<div class="staff-bal">'+pills+'</div>'+
@@ -782,6 +756,45 @@ async function confirmDeleteStaff(uid,name){
     renderStaff(allUsers);
     showToast(name+' removed from staff list.');
   } else showToast('Could not remove. Try again.');
+}
+
+/* ── CSV EXPORT ── */
+function exportCSV(){
+  if(!requests||!requests.length){showToast('No requests to export.');return;}
+  var rows=[['Name','Leave Type','Start Date','End Date','Working Days','Reason','Status','Rejection Reason','Submitted']];
+  requests.forEach(function(r){
+    rows.push([
+      r.name||'',
+      r.type||'',
+      fmtD(r.start),
+      fmtD(r.end),
+      r.days||'',
+      (r.reason||'').replace(/,/g,' '),
+      r.status||'',
+      (r.rejectReason||'').replace(/,/g,' '),
+      r.submitted||''
+    ]);
+  });
+  var csv=rows.map(function(row){
+    return row.map(function(v){
+      var s=String(v);
+      /* Wrap in quotes if contains comma, quote or newline */
+      if(s.indexOf(',')>-1||s.indexOf('"')>-1||s.indexOf('\n')>-1){
+        s='"'+s.replace(/"/g,'""')+'"';
+      }
+      return s;
+    }).join(',');
+  }).join('\n');
+  var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;
+  a.download='LeaveDesk_requests_'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('CSV downloaded ✓');
 }
 
 function fmtD(d){if(!d)return'';return new Date(d+'T00:00:00').toLocaleDateString('en-SG',{day:'2-digit',month:'short',year:'numeric'});}
