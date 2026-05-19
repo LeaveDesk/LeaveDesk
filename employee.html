@@ -70,7 +70,16 @@ hr.sep{border:none;border-top:1px solid var(--bd);margin:16px 0}
 .tbl th{background:var(--s2);font-size:12px;font-weight:600;color:var(--t2);padding:10px 14px;text-align:left;border-bottom:1px solid var(--bd)}
 .tbl td{font-size:13px;padding:11px 14px;border-bottom:1px solid var(--bd);vertical-align:middle}
 .tbl tr:last-child td{border-bottom:none}
-.tbl tr:hover td{background:#FAFAF8}
+.tbl tr.req-row{cursor:pointer;transition:background 0.1s}
+.tbl tr.req-row:hover td{background:#F5F9F7}
+.tbl tr.req-row.expanded td{background:#F5F9F7;font-weight:500}
+.tbl tr.detail-row.hidden{display:none}
+.req-detail{padding:14px 18px;font-size:13px;line-height:1.7;border-top:1px dashed var(--bd)}
+.req-detail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 24px}
+.req-detail-item .req-detail-label{font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:2px}
+.req-detail-item .req-detail-value{font-size:13.5px;color:var(--tx)}
+.req-chevron{font-size:11px;color:var(--t3);transition:transform 0.2s;display:inline-block;margin-left:4px}
+.req-row.expanded .req-chevron{transform:rotate(180deg)}
 .badge{font-size:11px;font-weight:500;padding:3px 9px;border-radius:40px;border:1px solid;white-space:nowrap}
 .badge-pending{background:var(--wl);color:var(--wt);border-color:#EDD69A}
 .badge-approved{background:var(--al);color:var(--at);border-color:#B7DEC9}
@@ -87,6 +96,8 @@ hr.sep{border:none;border-top:1px solid var(--bd);margin:16px 0}
 .cal-cell:hover{background:#F8F6F2}.cal-cell:nth-child(7n){border-right:none}
 .cal-dt{font-size:12px;font-weight:500;margin-bottom:3px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:50%}
 .cal-cell.today .cal-dt{background:var(--ac);color:#fff;font-weight:600}
+.cal-cell.own-leave{background:#F0FBF4}
+.cal-cell.own-leave .cal-dt{font-weight:700}
 .cal-cell.other-m .cal-dt{color:var(--t3)}
 .ev{font-size:10.5px;font-weight:500;padding:2px 5px;border-radius:3px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4}
 .ev.approved{background:var(--al);color:var(--at)}.ev.pending{background:var(--wl);color:var(--wt)}
@@ -162,6 +173,7 @@ hr.sep{border:none;border-top:1px solid var(--bd);margin:16px 0}
         <div class="err-msg">Please select a leave type.</div>
       </div>
       <div class="balance-warn" id="balance-warn"></div>
+      <div id="balance-chip" style="display:none;margin-top:7px;font-size:13px;color:var(--at);background:var(--al);border:1px solid #B7DEC9;border-radius:var(--r);padding:7px 12px;font-weight:500"></div>
       <hr class="sep">
       <div class="form-row">
         <div class="fg" id="fg-start">
@@ -231,7 +243,17 @@ hr.sep{border:none;border-top:1px solid var(--bd);margin:16px 0}
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script>
-firebase.initializeApp(FIREBASE_CONFIG);
+var _loadTimeout=setTimeout(function(){
+  var ls=document.getElementById('loading-screen');
+  if(ls&&ls.style.display!=='none'){location.href='auth.html';}
+},8000);
+try{
+  firebase.initializeApp(FIREBASE_CONFIG);
+}catch(e){
+  console.error('Firebase init failed:',e);
+  clearTimeout(_loadTimeout);
+  location.href='auth.html';
+}
 var auth=firebase.auth(), db=firebase.database();
 
 /* Init EmailJS if enabled — wait for SDK to load */
@@ -255,6 +277,7 @@ auth.onAuthStateChanged(function(user){
   if(!user){location.href='auth.html';return;}
   if(!user.emailVerified){
     currentUser=user;
+    clearTimeout(_loadTimeout);
     document.getElementById('loading-screen').style.display='none';
     document.getElementById('verify-banner').style.display='flex';
     /* Still set name/avatar so page isn't blank */
@@ -271,6 +294,7 @@ auth.onAuthStateChanged(function(user){
   var ini=name.split(' ').map(function(n){return n[0];}).join('').slice(0,2).toUpperCase();
   document.getElementById('user-avatar').textContent=ini;
   document.getElementById('user-name-nav').textContent=name;
+  clearTimeout(_loadTimeout);
   document.getElementById('loading-screen').style.display='none';
   var today=new Date().toISOString().slice(0,10);
   document.getElementById('start-date').min=today;
@@ -385,14 +409,24 @@ async function getUsed(name,type){
 async function onTypeChange(){
   var type=document.getElementById('leave-type').value;
   var warn=document.getElementById('balance-warn');
+  var chip=document.getElementById('balance-chip');
   warn.style.display='none';
-  if(!type||!currentUser||type==='Unpaid leave')return;
+  if(chip)chip.style.display='none';
+  if(!type||!currentUser)return;
+  if(type==='Unpaid leave'){if(chip){chip.style.display='block';chip.textContent='💼 Unpaid leave — no balance limit';}return;}
   var name=currentUser.displayName||currentUser.email.split('@')[0];
   var ent=ENTITLEMENTS[type]||4;
   var used=await getUsed(name,type);
-  var rem=ent-used;
-  if(rem<=0){warn.style.display='block';warn.textContent='⚠️ No '+type+' days remaining (0 of '+ent+' left). Request will be blocked.';}
-  else if(rem===1){warn.style.display='block';warn.style.cssText='display:block;background:#FEFCE8;border:1px solid #EDD69A;border-radius:10px;padding:10px 14px;font-size:13px;color:#7D5A0A;margin-top:8px';warn.textContent='⚠️ Only 1 day of '+type+' remaining.';}
+  var rem=Math.max(0,ent-used);
+  /* Always show balance chip */
+  if(chip){
+    chip.style.display='block';
+    chip.textContent='Balance: '+rem+' of '+ent+' days remaining';
+    chip.style.color=rem===0?'var(--dt)':rem===1?'var(--wt)':'var(--at)';
+    chip.style.background=rem===0?'var(--dl)':rem===1?'var(--wl)':'var(--al)';
+    chip.style.borderColor=rem===0?'#F5B7B1':rem===1?'#EDD69A':'#B7DEC9';
+  }
+  if(rem<=0){warn.style.display='block';warn.textContent='⚠️ No '+type+' days remaining. Your request will be blocked.';}
 }
 
 async function onDateChange(){
@@ -405,6 +439,24 @@ async function onDateChange(){
   var wd=workingDays(s,e);
   if(wd<1){tag.style.display='none';return;}
   tag.style.display='block';tag.textContent='📅 '+wd+' working day'+(wd>1?'s':'')+' requested';
+  /* Feature 2: warn if requested days exceed remaining balance */
+  var selType=document.getElementById('leave-type').value;
+  if(selType&&selType!=='Unpaid leave'&&currentUser){
+    var selName=currentUser.displayName||currentUser.email.split('@')[0];
+    var selEnt=ENTITLEMENTS[selType]||4;
+    var selUsed=await getUsed(selName,selType);
+    var selRem=Math.max(0,selEnt-selUsed);
+    if(wd>selRem&&selRem>0){
+      tag.className='days-tag warn';
+      tag.textContent='⚠️ '+wd+' days requested but only '+selRem+' day'+(selRem>1?'s':'')+' remaining for '+selType+'.';
+    } else if(selRem<=0){
+      tag.className='days-tag warn';
+      tag.textContent='⚠️ No '+selType+' days remaining — request will be blocked.';
+    } else {
+      tag.className='days-tag ok';
+      tag.textContent='📅 '+wd+' working day'+(wd>1?'s':'')+' requested ('+selRem+' remaining)';
+    }
+  }
   var all=await loadAllRequests();
   var cf=all.filter(function(r){return r.status==='Approved'&&!(r.end<s||r.start>e);});
   if(cf.length){var ns=[...new Set(cf.map(function(r){return r.name.split(' ')[0];}))];banner.style.display='block';banner.innerHTML='⚠️ <strong>'+ns.join(', ')+'</strong> '+(ns.length>1?'are':'is')+' already on leave during these dates.';}
@@ -480,13 +532,49 @@ async function loadMyRequests(){
   /* Check for new decisions and notify */
   checkNotifications(all);
   if(!all.length){list.innerHTML='<div class="empty">No leave requests yet. Submit one on the "Request leave" tab.</div>';return;}
-  var tbl='<table class="tbl"><thead><tr><th>Type</th><th>Dates</th><th>Days</th><th>Submitted</th><th>Status</th></tr></thead><tbody>';
-  tbl+=all.map(function(r){
+  var tbl='<table class="tbl"><thead><tr><th>Type</th><th>Dates</th><th>Days</th><th>Status</th></tr></thead><tbody>';
+  tbl+=all.map(function(r,idx){
     var ds=fmtD(r.start)+(r.start!==r.end?' – '+fmtD(r.end):'');
-    var extra=r.rejectReason?'<br><span style="font-size:11px;color:var(--dt)">'+esc(r.rejectReason)+'</span>':'';
-    return '<tr><td>'+esc(r.type)+'</td><td style="white-space:nowrap">'+ds+'</td><td>'+r.days+'</td><td style="white-space:nowrap">'+r.submitted+'</td><td><span class="badge badge-'+r.status.toLowerCase()+'">'+r.status+'</span>'+extra+'</td></tr>';
+    var cancelBtn=(!r._archived&&r.status==='Pending')
+      ?'<button onclick="event.stopPropagation();cancelRequest(this.dataset.key)" data-key="'+r._key+'" style="padding:4px 10px;border:1px solid #F5B7B1;border-radius:6px;background:#FDECEA;color:#7B241C;font-family:DM Sans,sans-serif;font-size:11px;cursor:pointer;white-space:nowrap;margin-top:8px;display:inline-block">Cancel request</button>':'';
+    var reasonHtml=r.reason?'<div class="req-detail-item"><div class="req-detail-label">Reason given</div><div class="req-detail-value">'+esc(r.reason)+'</div></div>':'';
+    var rejectHtml=r.rejectReason?'<div class="req-detail-item" style="grid-column:1/-1"><div class="req-detail-label">Rejection reason</div><div class="req-detail-value" style="color:var(--dt)">'+esc(r.rejectReason)+'</div></div>':'';
+    var detail='<tr class="detail-row hidden" id="detail-'+idx+'"><td colspan="4">'+
+      '<div class="req-detail">'+
+        '<div class="req-detail-grid">'+
+          '<div class="req-detail-item"><div class="req-detail-label">Leave type</div><div class="req-detail-value">'+esc(r.type)+'</div></div>'+
+          '<div class="req-detail-item"><div class="req-detail-label">Dates</div><div class="req-detail-value">'+ds+'</div></div>'+
+          '<div class="req-detail-item"><div class="req-detail-label">Working days</div><div class="req-detail-value">'+r.days+' day'+(r.days>1?'s':'')+'</div></div>'+
+          '<div class="req-detail-item"><div class="req-detail-label">Submitted</div><div class="req-detail-value">'+r.submitted+'</div></div>'+
+          reasonHtml+rejectHtml+
+        '</div>'+cancelBtn+
+      '</div>'+
+    '</td></tr>';
+    return '<tr class="req-row" onclick="toggleDetail('+idx+',this)">'+
+      '<td>'+esc(r.type)+'<span class="req-chevron">▼</span></td>'+
+      '<td style="white-space:nowrap;font-size:12.5px">'+ds+'</td>'+
+      '<td>'+r.days+'</td>'+
+      '<td><span class="badge badge-'+r.status.toLowerCase()+'">'+r.status+'</span></td>'+
+    '</tr>'+detail;
   }).join('');
   list.innerHTML=tbl+'</tbody></table>';
+}
+
+function toggleDetail(idx,row){
+  var detail=document.getElementById('detail-'+idx);
+  if(!detail)return;
+  var hidden=detail.classList.contains('hidden');
+  detail.classList.toggle('hidden',!hidden);
+  row.classList.toggle('expanded',hidden);
+}
+
+async function cancelRequest(key){
+  if(!confirm('Cancel this leave request? This cannot be undone.'))return;
+  try{
+    var r=await fetch('https://leavedesk2-default-rtdb.asia-southeast1.firebasedatabase.app/requests/'+key+'.json',{method:'DELETE'});
+    if(r.ok){showToast('Leave request cancelled.');loadMyRequests();}
+    else showToast('Could not cancel. Try again.');
+  }catch(e){showToast('Network error.');}
 }
 
 /* CALENDAR */
@@ -529,7 +617,10 @@ function renderCal(){
   for(var d=1;d<=dim;d++){
     var ds=y+'-'+(m+1<10?'0':'')+(m+1)+'-'+(d<10?'0':'')+d;
     var evs=map[ds]||[];
-    var cls='cal-cell'+(ds===today?' today':'');
+    /* Check if current user has leave on this date */
+    var myName=currentUser?(currentUser.displayName||currentUser.email.split('@')[0]):'';
+    var isOwn=myName&&evs.some(function(e){return e.lbl&&e.lbl.toLowerCase()===myName.split(' ')[0].toLowerCase()&&e.cls!=='event';});
+    var cls='cal-cell'+(ds===today?' today':'')+(isOwn?' own-leave':'');
     var evh=evs.slice(0,3).map(function(e){return '<div class="ev '+e.cls+'">'+esc(e.lbl)+'</div>';}).join('');
     if(evs.length>3)evh+='<div class="cal-more">+'+(evs.length-3)+' more</div>';
     html+='<div class="'+cls+'"'+(evs.length?' onclick="showDay(\''+ds+'\')"':'')+'>'+

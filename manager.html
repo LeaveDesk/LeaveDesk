@@ -56,6 +56,10 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
 @keyframes spin{to{transform:rotate(360deg)}}
 /* STATS */
 .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.today-section{background:var(--sf);border:1px solid #B7DEC9;border-radius:var(--rl);padding:13px 18px;margin-bottom:16px;display:none}
+.today-section-title{font-size:12px;font-weight:600;color:var(--at);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
+.today-chips{display:flex;flex-wrap:wrap;gap:6px}
+.today-chip{background:var(--al);color:var(--at);border:1px solid #B7DEC9;border-radius:40px;padding:4px 12px;font-size:12.5px;font-weight:500}
 .stat{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);padding:13px 16px;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
 .stat-n{font-family:'DM Serif Display',serif;font-size:28px;line-height:1;margin-bottom:2px}
 .stat-l{font-size:12px;color:var(--t2)}
@@ -161,6 +165,12 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--tx);color:#fff;padding:11px 22px;border-radius:40px;font-size:13px;font-weight:500;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);z-index:999;white-space:nowrap;pointer-events:none}
 .toast.show{transform:translateX(-50%) translateY(0)}
 @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+@media print{
+  .tabbar,.toolbar,.bulk-bar,.sel-all-row,.clear-row,.btn-nav,
+  button.btn-nav,.rc-detail,.modal-bg{display:none!important}
+  .rc{break-inside:avoid;box-shadow:none;border:1px solid #ccc}
+  body{background:#fff}
+}
 @media(max-width:480px){.form-row{grid-template-columns:1fr}.wrap{padding:20px 14px 50px}.tab{padding:10px 10px;font-size:12.5px}.cal-cell{min-height:46px}.ev{display:none}}
 </style>
 </head>
@@ -204,8 +214,12 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
   <div class="view" id="v-requests">
     <div class="ph" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
       <div><h1>Leave requests</h1><p>Approve or reject your team's leave.</p></div>
-      <button class="btn-nav danger" onclick="mgrLogout()">Sign out</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn-nav" onclick="window.print()" title="Print leave requests">🖨 Print</button>
+        <button class="btn-nav danger" onclick="mgrLogout()">Sign out</button>
+      </div>
     </div>
+    <div class="today-section" id="today-section"><div class="today-section-title">🟢 On leave today</div><div class="today-chips" id="today-chips"></div></div>
     <div class="stats-row" id="stats-row"></div>
     <div class="toolbar">
       <select id="f-status" onchange="renderRequests()">
@@ -432,6 +446,8 @@ function renderRequests(){
   document.getElementById('sel-all-row').style.display=p>0?'flex':'none';
   document.getElementById('clear-row').style.display=(a+rj)>0?'flex':'none';
   document.getElementById('btn-export').style.display=requests.length>0?'flex':'none';
+  /* Update today section */
+  updateTodaySection();
   /* Update pending badge */
   var badge=document.getElementById('pending-badge');
   if(badge){badge.textContent=p;badge.style.display=p>0?'inline-flex':'none';}
@@ -643,36 +659,27 @@ async function loadAndRenderStaff(){
     });
   }
 
-  /* Also load all requests + archive to catch users not yet in /users/ */
+  /* Load requests to compute leave usage — real accounts only, no ghost entries */
   var reqs=await loadReqs();
   var archData=await dbGet('/archive');
   var arch=archData?Object.values(archData):[];
   var combined=reqs.concat(arch);
-
-  /* Build any missing users from request history */
-  combined.forEach(function(r){
-    if(!r.name)return;
-    var found=Object.values(usersMap).some(function(u){
-      return u.name&&u.name.toLowerCase()===r.name.toLowerCase();
-    });
-    if(!found){
-      /* Create a synthetic user entry from request data */
-      var synKey='_syn_'+r.name.replace(/\s+/g,'_').toLowerCase();
-      if(!usersMap[synKey]){
-        usersMap[synKey]={_uid:null,_synth:true,name:r.name,email:r.uid?'(account exists)':'(no account)',joined:null};
-      }
-    }
-  });
 
   allUsers=Object.values(usersMap);
 
   /* Compute leave usage per user */
   allUsers.forEach(function(u){
     u._usage={};
+    u._totalReqs=0;
+    u._pendingReqs=0;
     combined.filter(function(r){
-      return r.status==='Approved'&&r.name&&u.name&&r.name.toLowerCase()===u.name.toLowerCase();
+      return r.name&&u.name&&r.name.toLowerCase()===u.name.toLowerCase();
     }).forEach(function(r){
-      u._usage[r.type]=(u._usage[r.type]||0)+(r.days||0);
+      u._totalReqs++;
+      if(r.status==='Pending') u._pendingReqs++;
+      if(r.status==='Approved'){
+        u._usage[r.type]=(u._usage[r.type]||0)+(r.days||0);
+      }
     });
   });
 
@@ -713,7 +720,7 @@ function renderStaff(users){
     return '<div class="staff-card" id="sc-'+u._uid+'">'+
       '<div class="staff-av">'+ini+'</div>'+
       '<div class="staff-info">'+
-        '<div class="staff-name">'+esc(u.name||'Unknown')+(u._synth?'<span style="font-size:11px;color:var(--t3);margin-left:6px">(from requests)</span>':'')+'</div>'+
+        '<div class="staff-name">'+esc(u.name||'Unknown')+'</div>'+
         '<div class="staff-email">'+esc(u.email||'')+'</div>'+
         '<div class="staff-joined">'+(u.joined?'Joined '+joined:'Seen in requests')+'</div>'+
       '</div>'+
@@ -795,6 +802,21 @@ function exportCSV(){
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
   showToast('CSV downloaded ✓');
+}
+
+function updateTodaySection(){
+  var today=new Date().toISOString().slice(0,10);
+  var onLeave=requests.filter(function(r){
+    return r.status==='Approved'&&r.start<=today&&r.end>=today;
+  });
+  var sec=document.getElementById('today-section');
+  var chips=document.getElementById('today-chips');
+  if(!sec||!chips)return;
+  if(!onLeave.length){sec.style.display='none';return;}
+  sec.style.display='block';
+  chips.innerHTML=onLeave.map(function(r){
+    return '<span class="today-chip">'+esc(r.name)+' <span style="opacity:0.7;font-weight:400">'+esc(r.type)+'</span></span>';
+  }).join('');
 }
 
 function fmtD(d){if(!d)return'';return new Date(d+'T00:00:00').toLocaleDateString('en-SG',{day:'2-digit',month:'short',year:'numeric'});}
