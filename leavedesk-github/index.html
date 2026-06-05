@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LeaveDesk — Simple Leave Management</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:#F5F2ED;color:#1A1714;font-size:15px}
+a{text-decoration:none;color:inherit}
+/* NAV */
+nav{background:#fff;border-bottom:1px solid #E2DDD6;padding:0 32px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.logo{font-family:'DM Serif Display',serif;font-size:20px;letter-spacing:-0.3px}
+.logo b{color:#2D6A4F;font-weight:400}
+.nav-actions{display:flex;gap:10px;align-items:center}
+.btn-nav-ghost{padding:8px 18px;border:1px solid #E2DDD6;border-radius:40px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;color:#6B6560;background:#fff;transition:all 0.15s}
+.btn-nav-ghost:hover{background:#F0EDE8;color:#1A1714}
+.btn-nav-solid{padding:8px 18px;border:none;border-radius:40px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;color:#fff;background:#2D6A4F;transition:background 0.15s}
+.btn-nav-solid:hover{background:#236040}
+/* HERO */
+.hero{max-width:760px;margin:0 auto;padding:80px 24px 60px;text-align:center}
+.hero-tag{display:inline-block;background:#D8EDDF;color:#1B4332;font-size:12.5px;font-weight:600;padding:5px 14px;border-radius:40px;margin-bottom:22px;letter-spacing:0.3px}
+.hero h1{font-family:'DM Serif Display',serif;font-size:clamp(36px,6vw,56px);font-weight:400;letter-spacing:-1px;line-height:1.1;margin-bottom:20px;color:#1A1714}
+.hero h1 span{color:#2D6A4F}
+.hero p{font-size:17px;color:#6B6560;line-height:1.7;max-width:520px;margin:0 auto 36px}
+.hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn-hero-primary{padding:13px 28px;background:#2D6A4F;color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer;transition:background 0.15s}
+.btn-hero-primary:hover{background:#236040}
+.btn-hero-outline{padding:13px 28px;background:#fff;color:#1A1714;border:1px solid #E2DDD6;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer;transition:all 0.15s}
+.btn-hero-outline:hover{background:#F0EDE8}
+/* FEATURES */
+.features{max-width:900px;margin:0 auto;padding:0 24px 80px}
+.section-label{text-align:center;font-size:12.5px;font-weight:600;color:#9E9891;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:14px}
+.section-title{text-align:center;font-family:'DM Serif Display',serif;font-size:32px;font-weight:400;margin-bottom:48px;letter-spacing:-0.5px}
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.feat-card{background:#fff;border:1px solid #E2DDD6;border-radius:16px;padding:28px 24px;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
+.feat-icon{width:44px;height:44px;border-radius:12px;background:#D8EDDF;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:16px}
+.feat-card h3{font-size:16px;font-weight:600;margin-bottom:8px}
+.feat-card p{font-size:13.5px;color:#6B6560;line-height:1.6}
+/* STEPS */
+.steps{background:#fff;border-top:1px solid #E2DDD6;border-bottom:1px solid #E2DDD6;padding:80px 24px}
+.steps-inner{max-width:800px;margin:0 auto}
+.steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:32px;margin-top:48px}
+.step{text-align:center}
+.step-num{width:40px;height:40px;border-radius:50%;background:#2D6A4F;color:#fff;font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.step h3{font-size:15px;font-weight:600;margin-bottom:8px}
+.step p{font-size:13.5px;color:#6B6560;line-height:1.6}
+/* CTA BANNER */
+.cta-banner{max-width:680px;margin:80px auto;padding:0 24px;text-align:center}
+.cta-inner{background:#1B4332;border-radius:20px;padding:52px 40px}
+.cta-inner h2{font-family:'DM Serif Display',serif;font-size:32px;font-weight:400;color:#fff;margin-bottom:12px}
+.cta-inner p{color:#A7D3B9;font-size:15px;margin-bottom:28px;line-height:1.6}
+.btn-cta{padding:13px 32px;background:#fff;color:#1B4332;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:all 0.15s}
+.btn-cta:hover{background:#D8EDDF}
+/* FOOTER */
+footer{border-top:1px solid #E2DDD6;padding:24px 32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+footer .logo{font-size:16px}
+footer p{font-size:13px;color:#9E9891}
+footer .footer-links{display:flex;gap:20px}
+footer .footer-links a{font-size:13px;color:#9E9891;transition:color 0.15s}
+footer .footer-links a:hover{color:#1A1714}
+@media(max-width:640px){
+  .feat-grid,.steps-grid{grid-template-columns:1fr}
+  nav{padding:0 16px}
+  .hero{padding:48px 16px 40px}
+  .cta-inner{padding:36px 24px}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Leave<b>Desk</b></div>
+  <div class="nav-actions">
+    <button class="btn-nav-ghost" onclick="location.href='auth.html?mode=login'">Sign in</button>
+    <button class="btn-nav-solid" onclick="location.href='auth.html?mode=signup'">Get started</button>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-tag">🌿 Free for all teams</div>
+  <h1>Leave management,<br><span>made simple</span></h1>
+  <p>Employees submit leave requests in seconds. Managers approve or reject with one click. Everyone stays in sync.</p>
+  <div class="hero-btns">
+    <button class="btn-hero-primary" onclick="location.href='auth.html?mode=signup'">Create free account</button>
+    <button class="btn-hero-outline" onclick="location.href='auth.html?mode=login'">Sign in to your account</button>
+  </div>
+</section>
+
+<section class="features">
+  <div class="section-label">Features</div>
+  <h2 class="section-title">Everything your team needs</h2>
+  <div class="feat-grid">
+    <div class="feat-card">
+      <div class="feat-icon">📝</div>
+      <h3>Quick leave requests</h3>
+      <p>Submit annual, medical, or emergency leave in under a minute. See your remaining balance instantly.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">✅</div>
+      <h3>One-click approvals</h3>
+      <p>Managers approve or reject requests with a reason. Bulk approve multiple requests at once.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">📅</div>
+      <h3>Team calendar</h3>
+      <p>See who's off and when. Conflict warnings when teammates are already on leave. Custom events too.</p>
+    </div>
+  </div>
+</section>
+
+<section class="steps">
+  <div class="steps-inner">
+    <div class="section-label" style="text-align:center">How it works</div>
+    <h2 class="section-title">Up and running in minutes</h2>
+    <div class="steps-grid">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3>Create your account</h3>
+        <p>Sign up with your email. Your name and leave balance are tracked automatically.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3>Submit a leave request</h3>
+        <p>Pick your dates, choose leave type, add a reason. See how many working days it covers.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3>Get approved</h3>
+        <p>Your manager reviews and approves or rejects. You see the decision instantly in My Approvals.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="cta-banner">
+  <div class="cta-inner">
+    <h2>Ready to get started?</h2>
+    <p>Create your employee account for free. No credit card needed.</p>
+    <button class="btn-cta" onclick="location.href='auth.html?mode=signup'">Create free account →</button>
+  </div>
+</div>
+
+<footer>
+  <div class="logo">Leave<b>Desk</b></div>
+  <p>© 2025 LeaveDesk. All rights reserved.</p>
+  <div class="footer-links">
+    <a href="manager.html">Manager portal</a>
+    <a href="auth.html">Employee sign in</a>
+  </div>
+</footer>
+
+<script src="config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script>
+try {
+  firebase.initializeApp(FIREBASE_CONFIG);
+  firebase.auth().onAuthStateChanged(function(user){
+    if(user) {
+      // already logged in — update nav to show dashboard button
+      document.querySelector('.nav-actions').innerHTML =
+        '<button class="btn-nav-solid" onclick="location.href=\'employee.html\'">Go to dashboard →</button>';
+    }
+  });
+} catch(e) {}
+</script>
+</body>
+</html>
