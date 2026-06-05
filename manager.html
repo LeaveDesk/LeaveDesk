@@ -596,9 +596,9 @@ function renderRequests() {
 
   // Stats with coloured border when non-zero
   document.getElementById('stats-row').innerHTML =
-    '<div class="stat" style="border-left:3px solid ' + (p  > 0 ? '#B7791F' : var(--bd)) + '"><div class="stat-n" style="color:' + (p  > 0 ? '#B7791F' : 'var(--tx)') + '">' + p  + '</div><div class="stat-l">Pending</div></div>' +
-    '<div class="stat" style="border-left:3px solid ' + (a  > 0 ? '#2D6A4F' : var(--bd)) + '"><div class="stat-n" style="color:' + (a  > 0 ? '#2D6A4F' : 'var(--tx)') + '">' + a  + '</div><div class="stat-l">Approved</div></div>' +
-    '<div class="stat" style="border-left:3px solid ' + (rj > 0 ? '#C0392B' : var(--bd)) + '"><div class="stat-n" style="color:' + (rj > 0 ? '#C0392B' : 'var(--tx)') + '">' + rj + '</div><div class="stat-l">Rejected</div></div>';
+    '<div class="stat" style="border-left:3px solid ' + (p  > 0 ? '#B7791F' : '#E2DDD6') + '"><div class="stat-n" style="color:' + (p  > 0 ? '#B7791F' : '#1A1714') + '">' + p  + '</div><div class="stat-l">Pending</div></div>' +
+    '<div class="stat" style="border-left:3px solid ' + (a  > 0 ? '#2D6A4F' : '#E2DDD6') + '"><div class="stat-n" style="color:' + (a  > 0 ? '#2D6A4F' : '#1A1714') + '">' + a  + '</div><div class="stat-l">Approved</div></div>' +
+    '<div class="stat" style="border-left:3px solid ' + (rj > 0 ? '#C0392B' : '#E2DDD6') + '"><div class="stat-n" style="color:' + (rj > 0 ? '#C0392B' : '#1A1714') + '">' + rj + '</div><div class="stat-l">Rejected</div></div>';
 
   document.getElementById('sel-all-row').style.display  = p > 0 ? 'flex' : 'none';
   document.getElementById('clear-row').style.display    = (a + rj) > 0 ? 'flex' : 'none';
